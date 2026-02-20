@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Play Mancala — The Game Keeper</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --ink: #1a1410;
+      --parchment: #f5f0e8;
+      --aged: #e8dfc8;
+      --sienna: #8b3a1c;
+      --gold: #c4972a;
+      --muted: #7a7060;
+      --wood-dark: #5c3317;
+      --wood-mid: #7a4a22;
+      --wood-light: #a0622e;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--ink);
+      color: var(--parchment);
+      font-family: 'DM Mono', monospace;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem 1rem;
+    }
+
+    .back-link {
+      align-self: flex-start;
+      color: var(--gold);
+      text-decoration: none;
+      font-size: 0.75rem;
+      letter-spacing: 0.1em;
+      margin-bottom: 2rem;
+    }
+
+    .game-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 2.5rem;
+      font-weight: 700;
+      margin-bottom: 0.25rem;
+      text-align: center;
+    }
+
+    .game-subtitle {
+      font-size: 0.7rem;
+      letter-spacing: 0.2em;
+      color: var(--gold);
+      text-transform: uppercase;
+      margin-bottom: 2rem;
+      text-align: center;
+    }
+
+    .status-bar {
+      background: rgba(196,151,42,0.1);
+      border: 1px solid rgba(196,151,42,0.3);
+      padding: 0.6rem 1.5rem;
+      font-size: 0.8rem;
+      letter-spacing: 0.1em;
+      margin-bottom: 2rem;
+      text-align: center;
+      min-width: 340px;
+      color: var(--parchment);
+    }
+
+    .status-bar.player1 { border-color: var(--sienna); background: rgba(139,58,28,0.15); }
+    .status-bar.player2 { border-color: var(--gold); background: rgba(196,151,42,0.15); }
+    .status-bar.gameover { border-color: var(--gold); background: rgba(196,151,42,0.2); color: var(--gold); }
+
+    /* ---- THE BOARD ---- */
+    .board-wrapper {
+      background: linear-gradient(135deg, var(--wood-dark), var(--wood-mid), var(--wood-dark));
+      border-radius: 80px;
+      padding: 1.5rem;
+      box-shadow:
+        0 20px 60px rgba(0,0,0,0.6),
+        inset 0 2px 4px rgba(255,255,255,0.1),
+        inset 0 -2px 4px rgba(0,0,0,0.3);
+      position: relative;
+    }
+
+    .board-inner {
+      background: linear-gradient(135deg, var(--wood-mid), var(--wood-light), var(--wood-mid));
+      border-radius: 60px;
+      padding: 1.2rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    /* Stores (big pits) */
+    .store {
+      width: 90px;
+      height: 160px;
+      background: radial-gradient(ellipse at 40% 40%, #3a1f0a, #1a0d04);
+      border-radius: 50px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      box-shadow: inset 0 4px 12px rgba(0,0,0,0.6), inset 0 -2px 4px rgba(255,255,255,0.05);
+      position: relative;
+    }
+
+    .store-label {
+      font-size: 0.55rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: rgba(196,151,42,0.6);
+    }
+
+    .store-count {
+      font-family: 'Playfair Display', serif;
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--gold);
+    }
+
+    /* Pits grid */
+    .pits-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .pits-row {
+      display: flex;
+      gap: 0.75rem;
+    }
+
+    .pit {
+      width: 72px;
+      height: 72px;
+      background: radial-gradient(ellipse at 40% 35%, #3a1f0a, #1a0d04);
+      border-radius: 50%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      position: relative;
+      box-shadow: inset 0 3px 8px rgba(0,0,0,0.7), inset 0 -1px 2px rgba(255,255,255,0.06);
+      transition: transform 0.15s, box-shadow 0.15s;
+      border: 2px solid transparent;
+    }
+
+    .pit:hover:not(.disabled):not(.empty) {
+      transform: scale(1.08);
+      box-shadow: inset 0 3px 8px rgba(0,0,0,0.7), 0 0 0 2px var(--gold);
+      border-color: var(--gold);
+    }
+
+    .pit.disabled, .pit.empty { cursor: default; }
+
+    .pit.active-player {
+      /* pits belonging to current player get subtle highlight */
+    }
+
+    .pit-count {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: var(--parchment);
+      line-height: 1;
+    }
+
+    /* seeds visual */
+    .seeds-dots {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 2px;
+      justify-content: center;
+      max-width: 44px;
+      position: absolute;
+      bottom: 8px;
+    }
+
+    .seed {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 35%, #d4a040, #8b6020);
+    }
+
+    .pit-index {
+      font-size: 0.5rem;
+      color: rgba(196,151,42,0.3);
+      position: absolute;
+      top: 4px;
+      letter-spacing: 0.05em;
+    }
+
+    .row-label {
+      font-size: 0.6rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: rgba(245,240,232,0.3);
+      text-align: center;
+      margin-top: 0.25rem;
+    }
+
+    /* ---- BUTTONS ---- */
+    .controls {
+      margin-top: 2rem;
+      display: flex;
+      gap: 1rem;
+    }
+
+    button {
+      background: none;
+      border: 1px solid rgba(196,151,42,0.4);
+      color: var(--parchment);
+      font-family: 'DM Mono', monospace;
+      font-size: 0.75rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 0.6rem 1.5rem;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    button:hover { border-color: var(--gold); background: rgba(196,151,42,0.1); }
+
+    /* ---- SCORE PANEL ---- */
+    .score-panel {
+      display: flex;
+      gap: 3rem;
+      margin-top: 1.5rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid rgba(196,151,42,0.15);
+    }
+
+    .score-item { text-align: center; }
+    .score-num {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: var(--gold);
+    }
+    .score-lbl { font-size: 0.6rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); }
+
+    .instructions {
+      max-width: 500px;
+      margin-top: 1.5rem;
+      font-size: 0.72rem;
+      color: var(--muted);
+      line-height: 1.7;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+  <a href="../games/mancala.html" class="back-link">← Back to Mancala</a>
+
+  <h1 class="game-title">Mancala</h1>
+  <p class="game-subtitle">Kalah variant · 2 players</p>
+
+  <div class="status-bar" id="statusBar">Player 1's turn — choose a pit on your side</div>
+
+  <div class="board-wrapper">
+    <div class="board-inner">
+
+      <!-- Player 2's store (left) -->
+      <div class="store" id="store2">
+        <span class="store-label">P2 Store</span>
+        <span class="store-count" id="store2-count">0</span>
+      </div>
+
+      <!-- Pits -->
+      <div class="pits-grid">
+        <!-- Player 2's row (top, reversed so pit 7 is on left) -->
+        <div class="pits-row" id="row2"></div>
+        <div class="row-label" id="row2-label">← Player 2</div>
+        <div class="row-label" id="row1-label">Player 1 →</div>
+        <!-- Player 1's row (bottom) -->
+        <div class="pits-row" id="row1"></div>
+      </div>
+
+      <!-- Player 1's store (right) -->
+      <div class="store" id="store1">
+        <span class="store-label">P1 Store</span>
+        <span class="store-count" id="store1-count">0</span>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="controls">
+    <button onclick="resetGame()">New Game</button>
+    <button onclick="toggleHelp()">How to Play</button>
+  </div>
+
+  <p class="instructions" id="helpText" style="display:none">
+    Pick up all seeds from one of <strong>your</strong> pits and sow them counter-clockwise.
+    Land in your store → free turn. Land in your empty pit → capture opposite pit.
+    Clear your side first. Most seeds in your store wins!
+  </p>
+
+  <script>
+    // Board: pits[0..5] = P1's pits, pits[6] = P1 store, pits[7..12] = P2's pits, pits[13] = P2 store
+    // P1 owns indices 0-5 and store at 6
+    // P2 owns indices 7-12 and store at 13
+
+    let pits = [];
+    let currentPlayer = 1;
+    let gameOver = false;
+
+    function initBoard() {
+      pits = Array(14).fill(4);
+      pits[6] = 0;   // P1 store
+      pits[13] = 0;  // P2 store
+      currentPlayer = 1;
+      gameOver = false;
+    }
+
+    function renderBoard() {
+      // Row 1: P1 pits 0-5
+      const row1 = document.getElementById('row1');
+      row1.innerHTML = '';
+      for (let i = 0; i <= 5; i++) {
+        row1.appendChild(makePit(i, 1));
+      }
+
+      // Row 2: P2 pits 7-12, displayed RIGHT to LEFT so pit 7 is on the right
+      const row2 = document.getElementById('row2');
+      row2.innerHTML = '';
+      for (let i = 12; i >= 7; i--) {
+        row2.appendChild(makePit(i, 2));
+      }
+
+      document.getElementById('store1-count').textContent = pits[6];
+      document.getElementById('store2-count').textContent = pits[13];
+    }
+
+    function makePit(index, owner) {
+      const pit = document.createElement('div');
+      pit.className = 'pit';
+      const count = pits[index];
+
+      if (owner !== currentPlayer || gameOver || count === 0) {
+        pit.classList.add('disabled');
+        if (count === 0) pit.classList.add('empty');
+      }
+
+      // Number
+      const num = document.createElement('span');
+      num.className = 'pit-count';
+      num.textContent = count;
+      pit.appendChild(num);
+
+      // Seed dots (up to 12 shown)
+      if (count > 0) {
+        const dots = document.createElement('div');
+        dots.className = 'seeds-dots';
+        const show = Math.min(count, 12);
+        for (let s = 0; s < show; s++) {
+          const seed = document.createElement('div');
+          seed.className = 'seed';
+          dots.appendChild(seed);
+        }
+        pit.appendChild(dots);
+      }
+
+      if (!pit.classList.contains('disabled') && count > 0) {
+        pit.addEventListener('click', () => makeMove(index));
+      }
+
+      return pit;
+    }
+
+    function makeMove(pitIndex) {
+      if (gameOver) return;
+      if (pits[pitIndex] === 0) return;
+      // Validate ownership
+      if (currentPlayer === 1 && (pitIndex < 0 || pitIndex > 5)) return;
+      if (currentPlayer === 2 && (pitIndex < 7 || pitIndex > 12)) return;
+
+      let seeds = pits[pitIndex];
+      pits[pitIndex] = 0;
+      let pos = pitIndex;
+
+      while (seeds > 0) {
+        pos = (pos + 1) % 14;
+        // Skip opponent's store
+        if (currentPlayer === 1 && pos === 13) pos = 0;
+        if (currentPlayer === 2 && pos === 6) { pos = 7; }
+        pits[pos]++;
+        seeds--;
+      }
+
+      // Free turn if landed in own store
+      let freeTurn = false;
+      if (currentPlayer === 1 && pos === 6) freeTurn = true;
+      if (currentPlayer === 2 && pos === 13) freeTurn = true;
+
+      // Capture: last seed landed in empty pit on own side, and opposite pit has seeds
+      if (!freeTurn) {
+        if (currentPlayer === 1 && pos >= 0 && pos <= 5 && pits[pos] === 1) {
+          const opposite = 12 - pos;
+          if (pits[opposite] > 0) {
+            pits[6] += pits[opposite] + 1;
+            pits[opposite] = 0;
+            pits[pos] = 0;
+          }
+        }
+        if (currentPlayer === 2 && pos >= 7 && pos <= 12 && pits[pos] === 1) {
+          const opposite = 12 - pos;
+          if (pits[opposite] > 0) {
+            pits[13] += pits[opposite] + 1;
+            pits[opposite] = 0;
+            pits[pos] = 0;
+          }
+        }
+      }
+
+      // Check if game over
+      const p1empty = pits.slice(0,6).every(x => x === 0);
+      const p2empty = pits.slice(7,13).every(x => x === 0);
+
+      if (p1empty || p2empty) {
+        // Collect remaining seeds
+        for (let i = 0; i <= 5; i++) { pits[6] += pits[i]; pits[i] = 0; }
+        for (let i = 7; i <= 12; i++) { pits[13] += pits[i]; pits[i] = 0; }
+        gameOver = true;
+        renderBoard();
+        showResult();
+        return;
+      }
+
+      if (!freeTurn) {
+        currentPlayer = currentPlayer === 1 ? 2 : 1;
+      }
+
+      renderBoard();
+      updateStatus(freeTurn);
+    }
+
+    function updateStatus(freeTurn) {
+      const bar = document.getElementById('statusBar');
+      if (freeTurn) {
+        bar.textContent = `Player ${currentPlayer} lands in store — free turn!`;
+      } else {
+        bar.textContent = `Player ${currentPlayer}'s turn — choose a pit on your side`;
+      }
+      bar.className = `status-bar player${currentPlayer}`;
+    }
+
+    function showResult() {
+      const bar = document.getElementById('statusBar');
+      const p1 = pits[6], p2 = pits[13];
+      let msg;
+      if (p1 > p2) msg = `🏆 Player 1 wins! ${p1} vs ${p2}`;
+      else if (p2 > p1) msg = `🏆 Player 2 wins! ${p2} vs ${p1}`;
+      else msg = `It's a tie! ${p1} each`;
+      bar.textContent = msg;
+      bar.className = 'status-bar gameover';
+    }
+
+    function resetGame() {
+      initBoard();
+      renderBoard();
+      const bar = document.getElementById('statusBar');
+      bar.textContent = "Player 1's turn — choose a pit on your side";
+      bar.className = 'status-bar player1';
+    }
+
+    function toggleHelp() {
+      const el = document.getElementById('helpText');
+      el.style.display = el.style.display === 'none' ? 'block' : 'none';
+    }
+
+    // Start
+    initBoard();
+    renderBoard();
+  </script>
+</body>
+</html>

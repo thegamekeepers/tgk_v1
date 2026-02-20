@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The Game Keeper</title>
+  <link rel="stylesheet" href="css/main.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Libre+Baskerville:ital@0;1&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="header-inner">
+      <div class="logo">
+        <span class="logo-mark">♟</span>
+        <div class="logo-text">
+          <span class="logo-title">The Game</span>
+          <span class="logo-subtitle">Keeper</span>
+        </div>
+      </div>
+      <nav class="main-nav">
+        <a href="index.html">Home</a>
+        <a href="#games">Games</a>
+        <a href="#regions">By Region</a>
+        <a href="#about">About</a>
+      </nav>
+    </div>
+  </header>
+
+  <section class="hero">
+    <div class="hero-grid-bg"></div>
+    <div class="hero-inner">
+      <p class="hero-eyebrow">A Living Encyclopedia</p>
+      <h1 class="hero-headline">Games Across<br/><em>Civilizations</em></h1>
+      <p class="hero-body">From the senet boards of Ancient Egypt to the go stones of Tang Dynasty China — explore the games that shaped cultures, tested minds, and connected people across millennia.</p>
+      <a href="#games" class="hero-cta">Explore the Collection</a>
+    </div>
+    <div class="hero-stats">
+      <div class="stat"><span class="stat-num">6</span><span class="stat-label">Continents</span></div>
+      <div class="stat"><span class="stat-num">5000+</span><span class="stat-label">Years of History</span></div>
+      <div class="stat"><span class="stat-num">∞</span><span class="stat-label">Moves to Learn</span></div>
+    </div>
+  </section>
+
+  <section id="games" class="games-section">
+    <div class="section-header">
+      <span class="section-label">The Collection</span>
+      <h2>Featured Games</h2>
+    </div>
+
+    <div class="games-grid">
+
+      <a href="games/mancala.html" class="game-card" data-region="africa">
+        <div class="card-region-tag">Africa · Middle East</div>
+        <div class="card-era">~700 AD</div>
+        <h3 class="card-title">Mancala</h3>
+        <p class="card-desc">One of the world's oldest strategy games, played with seeds or stones across pit-and-row boards carved from wood, stone, or even dug into the earth.</p>
+        <div class="card-footer">
+          <span class="card-demo-badge">▶ Playable Demo</span>
+          <span class="card-arrow">→</span>
+        </div>
+      </a>
+
+      <a href="games/senet.html" class="game-card" data-region="africa">
+        <div class="card-region-tag">Ancient Egypt</div>
+        <div class="card-era">~3100 BC</div>
+        <h3 class="card-title">Senet</h3>
+        <p class="card-desc">Found in predynastic Egyptian tombs, Senet was more than a game — it was a ritual journey through the underworld, played alongside the dead.</p>
+        <div class="card-footer">
+          <span class="card-arrow">→</span>
+        </div>
+      </a>
+
+      <a href="games/go.html" class="game-card" data-region="asia">
+        <div class="card-region-tag">China · Japan · Korea</div>
+        <div class="card-era">~2000 BC</div>
+        <h3 class="card-title">Go (围棋)</h3>
+        <p class="card-desc">Simple rules, infinite depth. Go has more possible positions than atoms in the observable universe, yet is learned in minutes and studied for lifetimes.</p>
+        <div class="card-footer">
+          <span class="card-arrow">→</span>
+        </div>
+      </a>
+
+      <a href="games/chess.html" class="game-card" data-region="asia">
+        <div class="card-region-tag">India → Persia → Europe</div>
+        <div class="card-era">~600 AD</div>
+        <h3 class="card-title">Chess</h3>
+        <p class="card-desc">Born as chaturanga in the Gupta Empire, transformed by the Persians, and reinvented in medieval Europe — chess is the world's most travelled game.</p>
+        <div class="card-footer">
+          <span class="card-arrow">→</span>
+        </div>
+      </a>
+
+      <a href="games/pachisi.html" class="game-card" data-region="asia">
+        <div class="card-region-tag">India</div>
+        <div class="card-era">~6th Century</div>
+        <h3 class="card-title">Pachisi</h3>
+        <p class="card-desc">The national game of India, played on a cross-shaped cloth board. Emperor Akbar famously played it using slaves as living pieces in his palace courtyard.</p>
+        <div class="card-footer">
+          <span class="card-arrow">→</span>
+        </div>
+      </a>
+
+      <a href="games/nine-mens-morris.html" class="game-card" data-region="europe">
+        <div class="card-region-tag">Roman Empire · Europe</div>
+        <div class="card-era">~1400 BC</div>
+        <h3 class="card-title">Nine Men's Morris</h3>
+        <p class="card-desc">Boards have been found carved into Egyptian temple roofing slabs and Roman military barracks. This game followed armies and trade routes across the ancient world.</p>
+        <div class="card-footer">
+          <span class="card-arrow">→</span>
+        </div>
+      </a>
+
+    </div>
+  </section>
+
+  <section id="regions" class="regions-section">
+    <div class="section-header">
+      <span class="section-label">Browse</span>
+      <h2>Games by Region</h2>
+    </div>
+    <div class="regions-grid">
+      <a href="#" class="region-card">
+        <span class="region-icon">🌍</span>
+        <span class="region-name">Africa</span>
+      </a>
+      <a href="#" class="region-card">
+        <span class="region-icon">🌏</span>
+        <span class="region-name">Asia</span>
+      </a>
+      <a href="#" class="region-card">
+        <span class="region-icon">🌎</span>
+        <span class="region-name">Americas</span>
+      </a>
+      <a href="#" class="region-card">
+        <span class="region-icon">🏛️</span>
+        <span class="region-name">Europe</span>
+      </a>
+      <a href="#" class="region-card">
+        <span class="region-icon">🕌</span>
+        <span class="region-name">Middle East</span>
+      </a>
+      <a href="#" class="region-card">
+        <span class="region-icon">🌊</span>
+        <span class="region-name">Oceania</span>
+      </a>
+    </div>
+  </section>
+
+  <section id="about" class="about-section">
+    <div class="about-inner">
+      <span class="section-label">Our Story</span>
+      <h2>Built by a father &amp; son</h2>
+      <p>This site is a project between us — a shared curiosity about how people across history have played, competed, and connected. We research each game together, write up the history, and (when we can!) build a playable version so you can experience it yourself.</p>
+      <p>We update this whenever we discover something new. If you know a game we should cover, we'd love to hear about it.</p>
+
+      <button class="contact-btn" onclick="toggleContact()" id="contactBtn">✉ Get in Touch</button>
+
+      <div class="contact-form-wrap" id="contactForm">
+        <form class="contact-form" onsubmit="handleSubmit(event)">
+          <div class="form-row">
+            <label for="contactName">Your Name</label>
+            <input type="text" id="contactName" placeholder="e.g. Jane Smith" required />
+          </div>
+          <div class="form-row">
+            <label for="contactEmail">Your Email</label>
+            <input type="email" id="contactEmail" placeholder="you@example.com" required />
+          </div>
+          <div class="form-row">
+            <label for="contactMsg">Message</label>
+            <textarea id="contactMsg" rows="4" placeholder="Tell us about a game we should cover, or just say hello..." required></textarea>
+          </div>
+          <div class="form-actions">
+            <button type="submit" class="form-submit">Send Message</button>
+            <button type="button" class="form-cancel" onclick="toggleContact()">Cancel</button>
+          </div>
+        </form>
+        <div class="form-success" id="formSuccess">
+          <span class="success-icon">✓</span>
+          <p>Thanks for reaching out! We'll get back to you soon.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <span class="logo-mark">♟</span>
+      <p>The Game Keeper — a living encyclopedia, always growing.</p>
+    </div>
+  </footer>
+
+  <script src="js/main.js"></script>
+</body>
+</html>
