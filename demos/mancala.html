@@ -11,7 +11,6 @@
     :root {
       --ink: #1a1410;
       --parchment: #f5f0e8;
-      --aged: #e8dfc8;
       --sienna: #8b3a1c;
       --gold: #c4972a;
       --muted: #7a7060;
@@ -19,9 +18,7 @@
       --wood-mid: #7a4a22;
       --wood-light: #a0622e;
     }
-
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       background: var(--ink);
       color: var(--parchment);
@@ -30,334 +27,236 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 2rem 1rem;
+      padding: 2rem 1rem 4rem;
     }
+    .back-link { align-self: flex-start; color: var(--gold); text-decoration: none; font-size: 0.75rem; letter-spacing: 0.1em; margin-bottom: 2rem; }
+    .back-link:hover { opacity: 0.7; }
+    .game-title { font-family: 'Playfair Display', serif; font-size: 2.5rem; font-weight: 700; margin-bottom: 0.25rem; text-align: center; }
+    .game-subtitle { font-size: 0.7rem; letter-spacing: 0.2em; color: var(--gold); text-transform: uppercase; margin-bottom: 1.5rem; text-align: center; }
 
-    .back-link {
-      align-self: flex-start;
-      color: var(--gold);
-      text-decoration: none;
-      font-size: 0.75rem;
-      letter-spacing: 0.1em;
-      margin-bottom: 2rem;
-    }
+    /* MODE */
+    .mode-selector { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; }
+    .mode-btn { background: none; border: 1px solid rgba(196,151,42,0.3); color: rgba(245,240,232,0.5); font-family: 'DM Mono', monospace; font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; padding: 0.4rem 1rem; cursor: pointer; transition: all 0.2s; }
+    .mode-btn.active { border-color: var(--gold); color: var(--gold); background: rgba(196,151,42,0.1); }
+    .mode-btn:hover { border-color: var(--gold); color: var(--parchment); }
 
-    .game-title {
-      font-family: 'Playfair Display', serif;
-      font-size: 2.5rem;
-      font-weight: 700;
-      margin-bottom: 0.25rem;
-      text-align: center;
-    }
-
-    .game-subtitle {
-      font-size: 0.7rem;
-      letter-spacing: 0.2em;
-      color: var(--gold);
-      text-transform: uppercase;
-      margin-bottom: 2rem;
-      text-align: center;
-    }
-
-    .status-bar {
-      background: rgba(196,151,42,0.1);
-      border: 1px solid rgba(196,151,42,0.3);
-      padding: 0.6rem 1.5rem;
-      font-size: 0.8rem;
-      letter-spacing: 0.1em;
-      margin-bottom: 2rem;
-      text-align: center;
-      min-width: 340px;
-      color: var(--parchment);
-    }
-
-    .status-bar.player1 { border-color: var(--sienna); background: rgba(139,58,28,0.15); }
+    /* STATUS */
+    .status-bar { padding: 0.65rem 1.5rem; font-size: 0.8rem; letter-spacing: 0.08em; margin-bottom: 1.5rem; text-align: center; min-width: 340px; border: 1px solid rgba(196,151,42,0.3); background: rgba(196,151,42,0.1); transition: border-color 0.3s, background 0.3s; }
+    .status-bar.player1 { border-color: var(--sienna); background: rgba(139,58,28,0.2); }
     .status-bar.player2 { border-color: var(--gold); background: rgba(196,151,42,0.15); }
     .status-bar.gameover { border-color: var(--gold); background: rgba(196,151,42,0.2); color: var(--gold); }
+    @keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.4} }
+    .status-bar.thinking { border-color: var(--gold); animation: pulse 1s ease infinite; }
 
-    /* ---- THE BOARD ---- */
-    .board-wrapper {
-      background: linear-gradient(135deg, var(--wood-dark), var(--wood-mid), var(--wood-dark));
-      border-radius: 80px;
-      padding: 1.5rem;
-      box-shadow:
-        0 20px 60px rgba(0,0,0,0.6),
-        inset 0 2px 4px rgba(255,255,255,0.1),
-        inset 0 -2px 4px rgba(0,0,0,0.3);
-      position: relative;
-    }
+    /* SCORE */
+    .score-tracker { display: flex; gap: 3rem; margin-bottom: 1.5rem; align-items: center; }
+    .score-block { text-align: center; }
+    .score-name { font-size: 0.6rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.2rem; }
+    .score-wins { font-family: 'Playfair Display', serif; font-size: 1.8rem; font-weight: 700; color: var(--gold); line-height: 1; }
+    .score-divider { font-size: 0.7rem; color: rgba(245,240,232,0.2); letter-spacing: 0.1em; }
 
-    .board-inner {
-      background: linear-gradient(135deg, var(--wood-mid), var(--wood-light), var(--wood-mid));
-      border-radius: 60px;
-      padding: 1.2rem;
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-    }
+    /* BOARD */
+    .board-wrapper { background: linear-gradient(135deg, var(--wood-dark), var(--wood-mid), var(--wood-dark)); border-radius: 80px; padding: 1.5rem; box-shadow: 0 20px 60px rgba(0,0,0,0.6), inset 0 2px 4px rgba(255,255,255,0.1), inset 0 -2px 4px rgba(0,0,0,0.3); }
+    .board-inner { background: linear-gradient(135deg, var(--wood-mid), var(--wood-light), var(--wood-mid)); border-radius: 60px; padding: 1.2rem; display: flex; align-items: center; gap: 0.75rem; }
+    .store { width: 90px; height: 160px; background: radial-gradient(ellipse at 40% 40%, #3a1f0a, #1a0d04); border-radius: 50px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.35rem; box-shadow: inset 0 4px 12px rgba(0,0,0,0.6), inset 0 -2px 4px rgba(255,255,255,0.05); transition: box-shadow 0.3s; border: 2px solid transparent; }
+    .store.active-store { border-color: rgba(196,151,42,0.4); box-shadow: inset 0 4px 12px rgba(0,0,0,0.6), 0 0 12px rgba(196,151,42,0.2); }
+    .store-label { font-size: 0.5rem; letter-spacing: 0.15em; text-transform: uppercase; color: rgba(196,151,42,0.5); }
+    .store-count { font-family: 'Playfair Display', serif; font-size: 2rem; font-weight: 700; color: var(--gold); }
+    .store-seeds { display: flex; flex-wrap: wrap; gap: 2px; justify-content: center; max-width: 60px; max-height: 48px; overflow: hidden; }
+    .pits-grid { display: flex; flex-direction: column; gap: 0.75rem; }
+    .pits-row { display: flex; gap: 0.75rem; }
+    .row-labels { display: flex; justify-content: space-between; padding: 0 4px; }
+    .row-label { font-size: 0.55rem; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(245,240,232,0.25); }
 
-    /* Stores (big pits) */
-    .store {
-      width: 90px;
-      height: 160px;
-      background: radial-gradient(ellipse at 40% 40%, #3a1f0a, #1a0d04);
-      border-radius: 50px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 0.5rem;
-      box-shadow: inset 0 4px 12px rgba(0,0,0,0.6), inset 0 -2px 4px rgba(255,255,255,0.05);
-      position: relative;
-    }
+    /* PITS */
+    .pit { width: 72px; height: 72px; background: radial-gradient(ellipse at 40% 35%, #3a1f0a, #1a0d04); border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: default; position: relative; box-shadow: inset 0 3px 8px rgba(0,0,0,0.7), inset 0 -1px 2px rgba(255,255,255,0.06); transition: transform 0.15s, box-shadow 0.15s; border: 2px solid transparent; overflow: hidden; }
+    .pit.valid { cursor: pointer; border-color: rgba(196,151,42,0.6); box-shadow: inset 0 3px 8px rgba(0,0,0,0.7), 0 0 10px rgba(196,151,42,0.25); }
+    .pit.valid:hover { transform: scale(1.1); border-color: var(--gold); box-shadow: inset 0 3px 8px rgba(0,0,0,0.7), 0 0 18px rgba(196,151,42,0.45); }
+    .pit.last-moved { border-color: rgba(139,58,28,0.7); box-shadow: inset 0 3px 8px rgba(0,0,0,0.7), 0 0 12px rgba(139,58,28,0.4); }
+    @keyframes captureFlash { 0%,100%{border-color:transparent} 40%{border-color:var(--sienna);box-shadow:inset 0 3px 8px rgba(0,0,0,0.7),0 0 20px rgba(139,58,28,0.8)} }
+    .pit.captured { animation: captureFlash 0.7s ease; }
+    .pit-count { font-family: 'Playfair Display', serif; font-size: 1.4rem; font-weight: 700; color: var(--parchment); line-height: 1; z-index: 1; }
+    .seeds-dots { display: flex; flex-wrap: wrap; gap: 2px; justify-content: center; max-width: 48px; position: absolute; bottom: 6px; }
+    .seed { width: 7px; height: 7px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #d4a040, #8b6020); }
 
-    .store-label {
-      font-size: 0.55rem;
-      letter-spacing: 0.15em;
-      text-transform: uppercase;
-      color: rgba(196,151,42,0.6);
-    }
+    /* CONTROLS */
+    .controls { display: flex; gap: 0.75rem; margin-top: 1.5rem; flex-wrap: wrap; justify-content: center; }
+    .ctrl-btn { background: none; border: 1px solid rgba(196,151,42,0.3); color: rgba(245,240,232,0.7); font-family: 'DM Mono', monospace; font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; padding: 0.5rem 1.2rem; cursor: pointer; transition: all 0.2s; }
+    .ctrl-btn:hover:not(:disabled) { border-color: var(--gold); color: var(--parchment); background: rgba(196,151,42,0.08); }
+    .ctrl-btn:disabled { opacity: 0.3; cursor: default; }
 
-    .store-count {
-      font-family: 'Playfair Display', serif;
-      font-size: 2rem;
-      font-weight: 700;
-      color: var(--gold);
-    }
+    /* HISTORY */
+    .history-panel { margin-top: 2rem; width: 100%; max-width: 580px; border-top: 1px solid rgba(196,151,42,0.15); padding-top: 1.5rem; }
+    .history-title { font-size: 0.6rem; letter-spacing: 0.25em; text-transform: uppercase; color: var(--muted); margin-bottom: 1rem; }
+    .history-list { display: flex; flex-direction: column; gap: 0.35rem; max-height: 180px; overflow-y: auto; }
+    .history-list::-webkit-scrollbar { width: 4px; }
+    .history-list::-webkit-scrollbar-thumb { background: rgba(196,151,42,0.2); }
+    @keyframes slideIn { from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:none} }
+    .history-entry { display: flex; align-items: center; gap: 0.75rem; font-size: 0.7rem; color: rgba(245,240,232,0.5); padding: 0.3rem 0; border-bottom: 1px solid rgba(196,151,42,0.06); animation: slideIn 0.2s ease; }
+    .history-num { color: rgba(196,151,42,0.3); min-width: 1.5rem; text-align: right; font-size: 0.6rem; }
+    .history-player { font-size: 0.6rem; padding: 0.15rem 0.4rem; }
+    .history-player.p1 { background: rgba(139,58,28,0.3); color: var(--sienna); }
+    .history-player.p2 { background: rgba(196,151,42,0.2); color: var(--gold); }
 
-    /* Pits grid */
-    .pits-grid {
-      display: flex;
-      flex-direction: column;
-      gap: 0.75rem;
-    }
-
-    .pits-row {
-      display: flex;
-      gap: 0.75rem;
-    }
-
-    .pit {
-      width: 72px;
-      height: 72px;
-      background: radial-gradient(ellipse at 40% 35%, #3a1f0a, #1a0d04);
-      border-radius: 50%;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      position: relative;
-      box-shadow: inset 0 3px 8px rgba(0,0,0,0.7), inset 0 -1px 2px rgba(255,255,255,0.06);
-      transition: transform 0.15s, box-shadow 0.15s;
-      border: 2px solid transparent;
-    }
-
-    .pit:hover:not(.disabled):not(.empty) {
-      transform: scale(1.08);
-      box-shadow: inset 0 3px 8px rgba(0,0,0,0.7), 0 0 0 2px var(--gold);
-      border-color: var(--gold);
-    }
-
-    .pit.disabled, .pit.empty { cursor: default; }
-
-    .pit.active-player {
-      /* pits belonging to current player get subtle highlight */
-    }
-
-    .pit-count {
-      font-family: 'Playfair Display', serif;
-      font-size: 1.4rem;
-      font-weight: 700;
-      color: var(--parchment);
-      line-height: 1;
-    }
-
-    /* seeds visual */
-    .seeds-dots {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 2px;
-      justify-content: center;
-      max-width: 44px;
-      position: absolute;
-      bottom: 8px;
-    }
-
-    .seed {
-      width: 7px;
-      height: 7px;
-      border-radius: 50%;
-      background: radial-gradient(circle at 35% 35%, #d4a040, #8b6020);
-    }
-
-    .pit-index {
-      font-size: 0.5rem;
-      color: rgba(196,151,42,0.3);
-      position: absolute;
-      top: 4px;
-      letter-spacing: 0.05em;
-    }
-
-    .row-label {
-      font-size: 0.6rem;
-      letter-spacing: 0.15em;
-      text-transform: uppercase;
-      color: rgba(245,240,232,0.3);
-      text-align: center;
-      margin-top: 0.25rem;
-    }
-
-    /* ---- BUTTONS ---- */
-    .controls {
-      margin-top: 2rem;
-      display: flex;
-      gap: 1rem;
-    }
-
-    button {
-      background: none;
-      border: 1px solid rgba(196,151,42,0.4);
-      color: var(--parchment);
-      font-family: 'DM Mono', monospace;
-      font-size: 0.75rem;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      padding: 0.6rem 1.5rem;
-      cursor: pointer;
-      transition: border-color 0.2s, background 0.2s;
-    }
-    button:hover { border-color: var(--gold); background: rgba(196,151,42,0.1); }
-
-    /* ---- SCORE PANEL ---- */
-    .score-panel {
-      display: flex;
-      gap: 3rem;
-      margin-top: 1.5rem;
-      padding-top: 1.5rem;
-      border-top: 1px solid rgba(196,151,42,0.15);
-    }
-
-    .score-item { text-align: center; }
-    .score-num {
-      font-family: 'Playfair Display', serif;
-      font-size: 1.8rem;
-      font-weight: 700;
-      color: var(--gold);
-    }
-    .score-lbl { font-size: 0.6rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); }
-
-    .instructions {
-      max-width: 500px;
-      margin-top: 1.5rem;
-      font-size: 0.72rem;
-      color: var(--muted);
-      line-height: 1.7;
-      text-align: center;
-    }
+    /* MODAL */
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 200; align-items: center; justify-content: center; padding: 2rem; }
+    .modal-overlay.open { display: flex; }
+    @keyframes modalIn { from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none} }
+    .modal { background: #1e1710; border: 1px solid rgba(196,151,42,0.3); max-width: 520px; width: 100%; padding: 2.5rem; position: relative; animation: modalIn 0.3s ease; }
+    .modal-close { position: absolute; top: 1rem; right: 1rem; background: none; border: none; color: var(--muted); font-size: 1.2rem; cursor: pointer; transition: color 0.2s; }
+    .modal-close:hover { color: var(--parchment); }
+    .modal h2 { font-family: 'Playfair Display', serif; font-size: 1.6rem; margin-bottom: 0.3rem; }
+    .modal .sub { font-size: 0.65rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--gold); margin-bottom: 1.5rem; }
+    .rules-list { list-style: none; counter-reset: rules; }
+    .rules-list li { counter-increment: rules; padding: 0.5rem 0 0.5rem 2rem; position: relative; border-bottom: 1px solid rgba(196,151,42,0.08); font-size: 0.82rem; line-height: 1.65; color: rgba(245,240,232,0.75); }
+    .rules-list li:last-child { border-bottom: none; }
+    .rules-list li::before { content: counter(rules); position: absolute; left: 0; font-size: 0.65rem; color: var(--gold); top: 0.65rem; }
+    .rules-list strong { color: var(--parchment); }
   </style>
 </head>
 <body>
 
   <a href="../games/mancala.html" class="back-link">← Back to Mancala</a>
-
   <h1 class="game-title">Mancala</h1>
-  <p class="game-subtitle">Kalah variant · 2 players</p>
+  <p class="game-subtitle">Kalah variant</p>
 
-  <div class="status-bar" id="statusBar">Player 1's turn — choose a pit on your side</div>
+  <div class="mode-selector">
+    <button class="mode-btn active" id="btn2p" onclick="setMode('2p')">2 Players</button>
+    <button class="mode-btn" id="btnAI" onclick="setMode('ai')">vs Computer</button>
+  </div>
+
+  <div class="status-bar player1" id="statusBar">Player 1's turn — choose a pit</div>
+
+  <div class="score-tracker">
+    <div class="score-block">
+      <div class="score-name">Player 1</div>
+      <div class="score-wins" id="p1wins">0</div>
+    </div>
+    <div class="score-divider">wins</div>
+    <div class="score-block">
+      <div class="score-name" id="p2name">Player 2</div>
+      <div class="score-wins" id="p2wins">0</div>
+    </div>
+  </div>
 
   <div class="board-wrapper">
     <div class="board-inner">
-
-      <!-- Player 2's store (left) -->
       <div class="store" id="store2">
-        <span class="store-label">P2 Store</span>
+        <span class="store-label" id="store2label">P2</span>
         <span class="store-count" id="store2-count">0</span>
+        <div class="store-seeds" id="store2-seeds"></div>
       </div>
-
-      <!-- Pits -->
       <div class="pits-grid">
-        <!-- Player 2's row (top, reversed so pit 7 is on left) -->
         <div class="pits-row" id="row2"></div>
-        <div class="row-label" id="row2-label">← Player 2</div>
-        <div class="row-label" id="row1-label">Player 1 →</div>
-        <!-- Player 1's row (bottom) -->
+        <div class="row-labels">
+          <span class="row-label" id="label2">← Player 2</span>
+          <span class="row-label" id="label1">Player 1 →</span>
+        </div>
         <div class="pits-row" id="row1"></div>
       </div>
-
-      <!-- Player 1's store (right) -->
       <div class="store" id="store1">
-        <span class="store-label">P1 Store</span>
+        <span class="store-label">P1</span>
         <span class="store-count" id="store1-count">0</span>
+        <div class="store-seeds" id="store1-seeds"></div>
       </div>
-
     </div>
   </div>
 
   <div class="controls">
-    <button onclick="resetGame()">New Game</button>
-    <button onclick="toggleHelp()">How to Play</button>
+    <button class="ctrl-btn" onclick="resetGame()">↺ New Game</button>
+    <button class="ctrl-btn" id="undoBtn" onclick="undoMove()" disabled>↩ Undo</button>
+    <button class="ctrl-btn" onclick="openRules()">? Rules</button>
   </div>
 
-  <p class="instructions" id="helpText" style="display:none">
-    Pick up all seeds from one of <strong>your</strong> pits and sow them counter-clockwise.
-    Land in your store → free turn. Land in your empty pit → capture opposite pit.
-    Clear your side first. Most seeds in your store wins!
-  </p>
+  <div class="history-panel">
+    <div class="history-title">Move History</div>
+    <div class="history-list" id="historyList"></div>
+  </div>
+
+  <div class="modal-overlay" id="rulesModal">
+    <div class="modal">
+      <button class="modal-close" onclick="closeRules()">✕</button>
+      <h2>How to Play</h2>
+      <p class="sub">Mancala · Kalah Variant</p>
+      <ol class="rules-list">
+        <li>Each player owns the <strong>6 pits on their side</strong> and one large store to their right.</li>
+        <li>The game starts with <strong>4 seeds in each pit</strong>. Stores start empty.</li>
+        <li>On your turn, pick up all seeds from one of your pits and <strong>sow them one by one</strong> counter-clockwise. Skip your opponent's store.</li>
+        <li><strong>Free turn:</strong> If your last seed lands in your own store, take another turn immediately.</li>
+        <li><strong>Capture:</strong> If your last seed lands in an empty pit on your side, you capture it plus all seeds in the pit directly opposite — all go into your store.</li>
+        <li>The game ends when one player's pits are completely empty. The other player collects all remaining seeds.</li>
+        <li><strong>Most seeds in your store wins!</strong> There are 48 seeds total.</li>
+      </ol>
+    </div>
+  </div>
 
   <script>
-    // Board: pits[0..5] = P1's pits, pits[6] = P1 store, pits[7..12] = P2's pits, pits[13] = P2 store
-    // P1 owns indices 0-5 and store at 6
-    // P2 owns indices 7-12 and store at 13
-
-    let pits = [];
-    let currentPlayer = 1;
-    let gameOver = false;
+    // pits[0-5] = P1, pits[6] = P1 store, pits[7-12] = P2, pits[13] = P2 store
+    let pits = [], currentPlayer = 1, gameOver = false;
+    let mode = '2p';
+    let wins = [0, 0];
+    let history = [];
+    let undoStack = [];
+    let lastMovedPit = -1;
+    let aiThinking = false;
 
     function initBoard() {
       pits = Array(14).fill(4);
-      pits[6] = 0;   // P1 store
-      pits[13] = 0;  // P2 store
+      pits[6] = 0; pits[13] = 0;
       currentPlayer = 1;
       gameOver = false;
+      history = [];
+      undoStack = [];
+      lastMovedPit = -1;
+      aiThinking = false;
+      renderBoard();
+      renderHistory();
+      updateStatus(false);
+      document.getElementById('undoBtn').disabled = true;
     }
 
+    function setMode(m) {
+      mode = m;
+      document.getElementById('btn2p').classList.toggle('active', m === '2p');
+      document.getElementById('btnAI').classList.toggle('active', m === 'ai');
+      const p2n = m === 'ai' ? 'Computer' : 'Player 2';
+      document.getElementById('p2name').textContent = p2n;
+      document.getElementById('label2').textContent = m === 'ai' ? '← Computer' : '← Player 2';
+      document.getElementById('store2label').textContent = m === 'ai' ? 'CPU' : 'P2';
+      wins = [0, 0];
+      document.getElementById('p1wins').textContent = 0;
+      document.getElementById('p2wins').textContent = 0;
+      initBoard();
+    }
+
+    // ---- RENDER ----
     function renderBoard() {
-      // Row 1: P1 pits 0-5
+      const validMoves = gameOver || aiThinking ? [] : getValidMoves(currentPlayer);
       const row1 = document.getElementById('row1');
-      row1.innerHTML = '';
-      for (let i = 0; i <= 5; i++) {
-        row1.appendChild(makePit(i, 1));
-      }
-
-      // Row 2: P2 pits 7-12, displayed RIGHT to LEFT so pit 7 is on the right
       const row2 = document.getElementById('row2');
-      row2.innerHTML = '';
-      for (let i = 12; i >= 7; i--) {
-        row2.appendChild(makePit(i, 2));
-      }
-
+      row1.innerHTML = ''; row2.innerHTML = '';
+      for (let i = 0; i <= 5; i++) row1.appendChild(makePit(i, 1, validMoves));
+      for (let i = 12; i >= 7; i--) row2.appendChild(makePit(i, 2, validMoves));
       document.getElementById('store1-count').textContent = pits[6];
       document.getElementById('store2-count').textContent = pits[13];
+      renderStoreSeeds('store1-seeds', pits[6]);
+      renderStoreSeeds('store2-seeds', pits[13]);
+      document.getElementById('store1').classList.toggle('active-store', currentPlayer === 1 && !gameOver && !aiThinking);
+      document.getElementById('store2').classList.toggle('active-store', currentPlayer === 2 && !gameOver && !aiThinking);
+      document.getElementById('undoBtn').disabled = undoStack.length === 0 || gameOver || aiThinking;
     }
 
-    function makePit(index, owner) {
+    function makePit(index, owner, validMoves) {
       const pit = document.createElement('div');
       pit.className = 'pit';
       const count = pits[index];
-
-      if (owner !== currentPlayer || gameOver || count === 0) {
-        pit.classList.add('disabled');
-        if (count === 0) pit.classList.add('empty');
-      }
-
-      // Number
+      const isValid = validMoves.includes(index);
+      if (isValid) pit.classList.add('valid');
+      if (index === lastMovedPit) pit.classList.add('last-moved');
       const num = document.createElement('span');
       num.className = 'pit-count';
       num.textContent = count;
       pit.appendChild(num);
-
-      // Seed dots (up to 12 shown)
       if (count > 0) {
         const dots = document.createElement('div');
         dots.className = 'seeds-dots';
@@ -369,118 +268,222 @@
         }
         pit.appendChild(dots);
       }
-
-      if (!pit.classList.contains('disabled') && count > 0) {
-        pit.addEventListener('click', () => makeMove(index));
-      }
-
+      if (isValid) pit.addEventListener('click', () => handleClick(index));
       return pit;
     }
 
-    function makeMove(pitIndex) {
-      if (gameOver) return;
-      if (pits[pitIndex] === 0) return;
-      // Validate ownership
-      if (currentPlayer === 1 && (pitIndex < 0 || pitIndex > 5)) return;
-      if (currentPlayer === 2 && (pitIndex < 7 || pitIndex > 12)) return;
+    function renderStoreSeeds(id, count) {
+      const el = document.getElementById(id);
+      el.innerHTML = '';
+      const show = Math.min(count, 18);
+      for (let i = 0; i < show; i++) {
+        const s = document.createElement('div');
+        s.className = 'seed';
+        el.appendChild(s);
+      }
+    }
 
+    function renderHistory() {
+      const list = document.getElementById('historyList');
+      list.innerHTML = '';
+      history.slice().reverse().forEach((entry, i) => {
+        const div = document.createElement('div');
+        div.className = 'history-entry';
+        const num = document.createElement('span');
+        num.className = 'history-num';
+        num.textContent = history.length - i;
+        const player = document.createElement('span');
+        player.className = `history-player ${entry.player === 1 ? 'p1' : 'p2'}`;
+        player.textContent = entry.player === 1 ? 'P1' : (mode === 'ai' ? 'CPU' : 'P2');
+        const text = document.createElement('span');
+        text.textContent = entry.text;
+        div.appendChild(num); div.appendChild(player); div.appendChild(text);
+        list.appendChild(div);
+      });
+    }
+
+    // ---- LOGIC ----
+    function getValidMoves(player) {
+      const start = player === 1 ? 0 : 7, end = player === 1 ? 5 : 12;
+      return Array.from({length: end - start + 1}, (_, i) => i + start).filter(i => pits[i] > 0);
+    }
+
+    function handleClick(index) {
+      if (gameOver || aiThinking) return;
+      if (mode === 'ai' && currentPlayer === 2) return;
+      makeMove(index);
+    }
+
+    function makeMove(pitIndex) {
+      if (gameOver || pits[pitIndex] === 0) return;
+
+      // Save undo snapshot for human moves
+      if (!(mode === 'ai' && currentPlayer === 2)) {
+        undoStack.push({ pits: [...pits], currentPlayer, history: [...history], lastMovedPit });
+      }
+
+      const player = currentPlayer;
+      const pitLabel = pitIndex <= 5 ? `Pit ${pitIndex + 1}` : `Pit ${13 - pitIndex}`;
       let seeds = pits[pitIndex];
       pits[pitIndex] = 0;
       let pos = pitIndex;
 
       while (seeds > 0) {
         pos = (pos + 1) % 14;
-        // Skip opponent's store
-        if (currentPlayer === 1 && pos === 13) pos = 0;
-        if (currentPlayer === 2 && pos === 6) { pos = 7; }
+        if (player === 1 && pos === 13) pos = 0;
+        if (player === 2 && pos === 6) pos = 7;
         pits[pos]++;
         seeds--;
       }
 
-      // Free turn if landed in own store
-      let freeTurn = false;
-      if (currentPlayer === 1 && pos === 6) freeTurn = true;
-      if (currentPlayer === 2 && pos === 13) freeTurn = true;
+      lastMovedPit = pos;
 
-      // Capture: last seed landed in empty pit on own side, and opposite pit has seeds
+      const freeTurn = (player === 1 && pos === 6) || (player === 2 && pos === 13);
+      let captured = false, captureAmt = 0;
+
       if (!freeTurn) {
-        if (currentPlayer === 1 && pos >= 0 && pos <= 5 && pits[pos] === 1) {
-          const opposite = 12 - pos;
-          if (pits[opposite] > 0) {
-            pits[6] += pits[opposite] + 1;
-            pits[opposite] = 0;
-            pits[pos] = 0;
-          }
+        if (player === 1 && pos >= 0 && pos <= 5 && pits[pos] === 1) {
+          const opp = 12 - pos;
+          if (pits[opp] > 0) { captureAmt = pits[opp] + 1; pits[6] += captureAmt; pits[opp] = 0; pits[pos] = 0; captured = true; }
         }
-        if (currentPlayer === 2 && pos >= 7 && pos <= 12 && pits[pos] === 1) {
-          const opposite = 12 - pos;
-          if (pits[opposite] > 0) {
-            pits[13] += pits[opposite] + 1;
-            pits[opposite] = 0;
-            pits[pos] = 0;
-          }
+        if (player === 2 && pos >= 7 && pos <= 12 && pits[pos] === 1) {
+          const opp = 12 - pos;
+          if (pits[opp] > 0) { captureAmt = pits[opp] + 1; pits[13] += captureAmt; pits[opp] = 0; pits[pos] = 0; captured = true; }
         }
       }
 
-      // Check if game over
-      const p1empty = pits.slice(0,6).every(x => x === 0);
-      const p2empty = pits.slice(7,13).every(x => x === 0);
+      let histText = pitLabel;
+      if (freeTurn) histText += ' → free turn!';
+      else if (captured) histText += ` → captured ${captureAmt}!`;
+      history.push({ player, text: histText });
+
+      const p1empty = pits.slice(0,6).every(x=>x===0);
+      const p2empty = pits.slice(7,13).every(x=>x===0);
 
       if (p1empty || p2empty) {
-        // Collect remaining seeds
-        for (let i = 0; i <= 5; i++) { pits[6] += pits[i]; pits[i] = 0; }
-        for (let i = 7; i <= 12; i++) { pits[13] += pits[i]; pits[i] = 0; }
+        for (let i=0;i<=5;i++){pits[6]+=pits[i];pits[i]=0;}
+        for (let i=7;i<=12;i++){pits[13]+=pits[i];pits[i]=0;}
         gameOver = true;
-        renderBoard();
-        showResult();
+        renderBoard(); renderHistory(); showResult();
         return;
       }
 
-      if (!freeTurn) {
-        currentPlayer = currentPlayer === 1 ? 2 : 1;
-      }
+      if (!freeTurn) currentPlayer = currentPlayer === 1 ? 2 : 1;
+      renderBoard(); renderHistory(); updateStatus(freeTurn);
 
-      renderBoard();
-      updateStatus(freeTurn);
+      if (mode === 'ai' && currentPlayer === 2 && !gameOver) triggerAI();
     }
 
+    // ---- AI ----
+    function triggerAI() {
+      aiThinking = true;
+      const bar = document.getElementById('statusBar');
+      bar.className = 'status-bar thinking';
+      bar.textContent = 'Computer is thinking...';
+      renderBoard();
+      setTimeout(() => {
+        const best = getBestMove(pits, 2, 6);
+        aiThinking = false;
+        makeMove(best);
+      }, 650);
+    }
+
+    function getBestMove(board, player, depth) {
+      const moves = getMovesFor(board, player);
+      let bestScore = -Infinity, bestMove = moves[0];
+      for (const move of moves) {
+        const { newBoard, nextPlayer } = simMove(board, player, move);
+        const score = minimax(newBoard, nextPlayer, depth - 1, -Infinity, Infinity, nextPlayer === 2);
+        if (score > bestScore) { bestScore = score; bestMove = move; }
+      }
+      return bestMove;
+    }
+
+    function minimax(board, player, depth, alpha, beta, maximizing) {
+      const p1e = board.slice(0,6).every(x=>x===0), p2e = board.slice(7,13).every(x=>x===0);
+      if (depth === 0 || p1e || p2e) return board[13] - board[6];
+      const moves = getMovesFor(board, player);
+      if (!moves.length) return board[13] - board[6];
+      if (maximizing) {
+        let best = -Infinity;
+        for (const m of moves) {
+          const { newBoard, nextPlayer } = simMove(board, player, m);
+          best = Math.max(best, minimax(newBoard, nextPlayer, depth-1, alpha, beta, nextPlayer === 2));
+          alpha = Math.max(alpha, best);
+          if (beta <= alpha) break;
+        }
+        return best;
+      } else {
+        let best = Infinity;
+        for (const m of moves) {
+          const { newBoard, nextPlayer } = simMove(board, player, m);
+          best = Math.min(best, minimax(newBoard, nextPlayer, depth-1, alpha, beta, nextPlayer === 2));
+          beta = Math.min(beta, best);
+          if (beta <= alpha) break;
+        }
+        return best;
+      }
+    }
+
+    function getMovesFor(board, player) {
+      const start = player===1?0:7, end = player===1?5:12;
+      return Array.from({length:end-start+1},(_,i)=>i+start).filter(i=>board[i]>0);
+    }
+
+    function simMove(board, player, pitIndex) {
+      const b = [...board];
+      let seeds = b[pitIndex]; b[pitIndex] = 0; let pos = pitIndex;
+      while (seeds > 0) {
+        pos = (pos+1)%14;
+        if (player===1&&pos===13) pos=0;
+        if (player===2&&pos===6) pos=7;
+        b[pos]++; seeds--;
+      }
+      const free = (player===1&&pos===6)||(player===2&&pos===13);
+      if (!free) {
+        if (player===1&&pos>=0&&pos<=5&&b[pos]===1){const o=12-pos;if(b[o]>0){b[6]+=b[o]+1;b[o]=0;b[pos]=0;}}
+        if (player===2&&pos>=7&&pos<=12&&b[pos]===1){const o=12-pos;if(b[o]>0){b[13]+=b[o]+1;b[o]=0;b[pos]=0;}}
+      }
+      return { newBoard: b, nextPlayer: free ? player : (player===1?2:1) };
+    }
+
+    // ---- UNDO ----
+    function undoMove() {
+      if (!undoStack.length) return;
+      const s = undoStack.pop();
+      pits = s.pits; currentPlayer = s.currentPlayer;
+      history = s.history; lastMovedPit = s.lastMovedPit;
+      gameOver = false; aiThinking = false;
+      renderBoard(); renderHistory(); updateStatus(false);
+    }
+
+    // ---- STATUS ----
     function updateStatus(freeTurn) {
       const bar = document.getElementById('statusBar');
-      if (freeTurn) {
-        bar.textContent = `Player ${currentPlayer} lands in store — free turn!`;
-      } else {
-        bar.textContent = `Player ${currentPlayer}'s turn — choose a pit on your side`;
-      }
+      const name = currentPlayer === 1 ? 'Player 1' : (mode==='ai'?'Computer':'Player 2');
+      bar.textContent = freeTurn ? `${name} gets a free turn!` : `${name}'s turn — choose a pit`;
       bar.className = `status-bar player${currentPlayer}`;
     }
 
     function showResult() {
       const bar = document.getElementById('statusBar');
-      const p1 = pits[6], p2 = pits[13];
-      let msg;
-      if (p1 > p2) msg = `🏆 Player 1 wins! ${p1} vs ${p2}`;
-      else if (p2 > p1) msg = `🏆 Player 2 wins! ${p2} vs ${p1}`;
-      else msg = `It's a tie! ${p1} each`;
-      bar.textContent = msg;
+      const p1=pits[6], p2=pits[13];
+      if (p1>p2) { bar.textContent=`🏆 Player 1 wins! (${p1}–${p2})`; wins[0]++; }
+      else if (p2>p1) { const n=mode==='ai'?'Computer':'Player 2'; bar.textContent=`🏆 ${n} wins! (${p2}–${p1})`; wins[1]++; }
+      else { bar.textContent=`It's a draw! (${p1} each)`; }
       bar.className = 'status-bar gameover';
+      document.getElementById('p1wins').textContent = wins[0];
+      document.getElementById('p2wins').textContent = wins[1];
     }
 
-    function resetGame() {
-      initBoard();
-      renderBoard();
-      const bar = document.getElementById('statusBar');
-      bar.textContent = "Player 1's turn — choose a pit on your side";
-      bar.className = 'status-bar player1';
-    }
+    // ---- MODAL ----
+    function openRules() { document.getElementById('rulesModal').classList.add('open'); }
+    function closeRules() { document.getElementById('rulesModal').classList.remove('open'); }
+    document.getElementById('rulesModal').addEventListener('click', e => { if (e.target === document.getElementById('rulesModal')) closeRules(); });
 
-    function toggleHelp() {
-      const el = document.getElementById('helpText');
-      el.style.display = el.style.display === 'none' ? 'block' : 'none';
-    }
+    function resetGame() { initBoard(); }
 
-    // Start
     initBoard();
-    renderBoard();
   </script>
 </body>
 </html>
