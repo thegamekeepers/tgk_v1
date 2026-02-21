@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Go — The Game Keeper</title>
+  <link rel="stylesheet" href="../css/main.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Libre+Baskerville:ital@0;1&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="header-inner">
+      <a href="../index.html" class="logo">
+        <span class="logo-mark">♟</span>
+        <div class="logo-text">
+          <span class="logo-title">The Game</span>
+          <span class="logo-subtitle">Keeper</span>
+        </div>
+      </a>
+      <nav class="main-nav">
+        <a href="../index.html">Home</a>
+        <a href="../index.html#games">Games</a>
+        <a href="../index.html#regions">By Region</a>
+        <a href="../index.html#about">About</a>
+      </nav>
+    </div>
+  </header>
+
+  <section class="game-hero">
+    <div class="game-hero-inner">
+      <a href="../index.html#games" class="breadcrumb">← Back to all games</a>
+      <p class="subtitle">China · Japan · Korea · Strategy</p>
+      <h1>Go <em style="font-size:0.6em; opacity:0.7">围棋</em></h1>
+      <div class="game-meta">
+        <div class="meta-item">
+          <span class="meta-label">Origin</span>
+          <span class="meta-value">China</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-label">Earliest Evidence</span>
+          <span class="meta-value">~2000 BC</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-label">Players</span>
+          <span class="meta-value">2</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-label">Also Known As</span>
+          <span class="meta-value">Weiqi, Baduk, Igo</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="game-content">
+    <article class="game-body">
+
+      <h2>History &amp; Origins</h2>
+      <p>Go is almost certainly the oldest strategy board game still played in its original form today. Chinese legend attributes its invention to the Emperor Yao around 2300 BC, who supposedly created it to teach his son discipline and concentration. While the mythological origin is charming, archaeological evidence suggests the game developed gradually during the Zhou Dynasty, with the earliest definitive written references appearing around 548 BC.</p>
+      <p>Known in Chinese as <em>Weiqi</em> (围棋, meaning "encirclement game"), it spread to Korea — where it became <em>Baduk</em> — around the 5th or 6th century AD, and to Japan — where it became <em>Igo</em> — around the same period. In Japan especially, Go flourished under aristocratic patronage and eventually became a professional pursuit, with the Tokugawa shogunate establishing four official Go houses and a ranking system in the 17th century that survives in modified form to this day.</p>
+      <p>For most of its history, Go was considered Asia's supreme intellectual challenge. It was one of the four arts that a cultured Chinese gentleman was expected to master, alongside calligraphy, painting, and playing the guqin.</p>
+
+      <h2>Cultural Significance</h2>
+      <p>In East Asian culture, Go has carried philosophical weight far beyond its status as a game. The concept of <em>fuseki</em> (opening strategy) has been used as a metaphor for military planning, business strategy, and political thinking for centuries. Sun Tzu's <em>The Art of War</em> and Go strategy share many overlapping ideas about indirect action, the importance of position, and thinking several moves ahead.</p>
+      <p>In Japan, Go became so culturally significant that the government officially sponsored the game's top players for nearly 300 years. The title of <em>Meijin</em> (master) was the most prestigious honour in the game, and matches for the title were national events. The novelist Yasunari Kawabata, who won the Nobel Prize for Literature in 1968, wrote a famous account of a Meijin title match as one of his most celebrated works.</p>
+      <p>Go has also played a surprising role in the history of artificial intelligence. For decades, computer scientists used chess as a benchmark for machine intelligence — and cracked it in 1997 when Deep Blue defeated Garry Kasparov. Go was considered a far more distant challenge due to its complexity. When Google's AlphaGo defeated world champion Lee Sedol in 2016, it was considered one of the landmark moments in the history of AI — a genuine shock to the professional Go world.</p>
+
+      <h2>The Beauty of Simplicity</h2>
+      <p>Go's rules can be taught in minutes: two players alternate placing black and white stones on the intersections of a 19×19 grid, trying to surround territory and capture the opponent's stones by surrounding them. There are essentially only two rules. Yet from these two rules emerges a game of staggering complexity — there are more possible Go positions than atoms in the observable universe.</p>
+      <p>This gap between simple rules and profound depth is what has made Go so enduring. Unlike chess, where pieces have specific powers and the game has a defined end state, Go is territorial and flowing — the board shifts gradually, areas of influence expand and contract, and a game can turn on a single unexpected move. Players speak of Go as something closer to a conversation than a battle.</p>
+
+      <h2>Why It Endures</h2>
+      <p>Go remains one of the most actively played strategy games in the world, with an estimated 40–60 million players globally. Professional circuits exist in China, Japan, and South Korea, where top players are celebrities. Online Go communities are vast and welcoming to beginners, and the ranking system — from 30 kyu (beginner) to 9 dan (grandmaster) — gives players a clear path of lifelong improvement. It is genuinely one of those rare games where you can spend a lifetime learning and still find new depths.</p>
+
+    </article>
+
+    <aside class="game-sidebar">
+      <div class="sidebar-box">
+        <h3>How to Play</h3>
+        <ol class="how-to-steps">
+          <li>Black plays first, then players alternate placing one stone on any empty intersection of the 19×19 grid.</li>
+          <li>Stones cannot be moved once placed.</li>
+          <li>A stone (or connected group) is captured when all of its adjacent empty points — called <em>liberties</em> — are occupied by the opponent. Captured stones are removed.</li>
+          <li>You cannot place a stone where it would immediately have no liberties, unless doing so captures opponent stones.</li>
+          <li>The Ko rule: you cannot immediately recapture a single stone if doing so recreates the previous board position.</li>
+          <li>The game ends when both players pass consecutively. Territory is counted — surrounded empty intersections plus captured stones.</li>
+          <li>Most territory wins. White receives a <em>komi</em> bonus (usually 6.5 points) to compensate for Black's first-move advantage.</li>
+        </ol>
+      </div>
+
+      <div class="sidebar-box" style="margin-top:1.5rem">
+        <h3>Did You Know?</h3>
+        <p style="font-size:0.85rem;line-height:1.7;color:var(--muted)">The number of possible Go games is estimated at 10 to the power of 170 — vastly more than the number of atoms in the observable universe (roughly 10 to the power of 80).</p>
+      </div>
+    </aside>
+  </div>
+
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <span class="logo-mark">♟</span>
+      <p>The Game Keeper — a living encyclopedia, always growing.</p>
+    </div>
+  </footer>
+
+  <script src="../js/main.js"></script>
+</body>
+</html>
