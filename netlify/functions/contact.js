@@ -26,7 +26,7 @@ exports.handler = async function (event) {
       'Content-Type': 'application/json'
     },
     body: JSON.stringify({
-      from: 'The Game Keeper <contact@the-gamekeeper.com>',
+      from: 'The Game Keeper <contact@send.the-gamekeeper.com>',
       to: 'willow.dominion@gmail.com',
       reply_to: email,
       subject: `New message from ${name} — The Game Keeper`,
