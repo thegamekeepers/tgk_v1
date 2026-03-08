@@ -1,0 +1,1028 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Play Patolli — The Game Keeper</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --ink: #1a1410;
+      --parchment: #f5f0e8;
+      --aged: #e8dfc8;
+      --sienna: #8b3a1c;
+      --gold: #c4972a;
+      --muted: #7a7060;
+      --jade: #2d6b4a;
+      --jade-light: #3d8b60;
+      --obsidian: #0f0c08;
+      --p1color: #c4972a;
+      --p2color: #8b3a1c;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--obsidian);
+      color: var(--parchment);
+      font-family: 'DM Mono', monospace;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem 1rem 4rem;
+      background-image:
+        radial-gradient(ellipse at 20% 20%, rgba(196,151,42,0.04) 0%, transparent 60%),
+        radial-gradient(ellipse at 80% 80%, rgba(139,58,28,0.04) 0%, transparent 60%);
+    }
+
+    .back-link {
+      align-self: flex-start;
+      color: var(--gold);
+      text-decoration: none;
+      font-size: 0.75rem;
+      letter-spacing: 0.1em;
+      margin-bottom: 2rem;
+      opacity: 0.7;
+      transition: opacity 0.2s;
+    }
+    .back-link:hover { opacity: 1; }
+
+    .game-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 2.5rem;
+      font-weight: 700;
+      margin-bottom: 0.2rem;
+      text-align: center;
+      letter-spacing: 0.02em;
+    }
+    .game-subtitle {
+      font-size: 0.68rem;
+      letter-spacing: 0.25em;
+      color: var(--gold);
+      text-transform: uppercase;
+      margin-bottom: 1.5rem;
+      text-align: center;
+    }
+
+    /* ---- MODE ---- */
+    .mode-selector { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; }
+    .mode-btn {
+      background: none;
+      border: 1px solid rgba(196,151,42,0.25);
+      color: rgba(245,240,232,0.4);
+      font-family: 'DM Mono', monospace;
+      font-size: 0.68rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      padding: 0.4rem 1rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .mode-btn.active { border-color: var(--gold); color: var(--gold); background: rgba(196,151,42,0.08); }
+    .mode-btn:hover { border-color: var(--gold); color: var(--parchment); }
+
+    /* ---- STATUS ---- */
+    .status-bar {
+      padding: 0.65rem 2rem;
+      font-size: 0.78rem;
+      letter-spacing: 0.08em;
+      margin-bottom: 1.5rem;
+      text-align: center;
+      min-width: 360px;
+      border: 1px solid rgba(196,151,42,0.25);
+      background: rgba(196,151,42,0.06);
+      transition: all 0.3s;
+    }
+    .status-bar.p1 { border-color: rgba(196,151,42,0.6); background: rgba(196,151,42,0.1); }
+    .status-bar.p2 { border-color: rgba(139,58,28,0.6); background: rgba(139,58,28,0.12); }
+    .status-bar.gameover { border-color: var(--gold); background: rgba(196,151,42,0.15); color: var(--gold); }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+    .status-bar.thinking { border-color: var(--gold); animation: pulse 1s ease infinite; }
+
+    /* ---- SCORE ---- */
+    .score-tracker {
+      display: flex;
+      gap: 3rem;
+      margin-bottom: 1.5rem;
+      align-items: center;
+    }
+    .score-block { text-align: center; }
+    .score-name { font-size: 0.58rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.2rem; }
+    .score-wins { font-family: 'Playfair Display', serif; font-size: 1.8rem; font-weight: 700; color: var(--gold); line-height: 1; }
+    .score-divider { font-size: 0.65rem; color: rgba(245,240,232,0.15); letter-spacing: 0.1em; }
+
+    /* ---- BOARD ---- */
+    .board-area {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .board-container {
+      position: relative;
+      width: 460px;
+      height: 460px;
+    }
+
+    /* The cross-shaped board drawn on canvas */
+    #boardCanvas {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* ---- DICE AREA ---- */
+    .dice-area {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .beans-row {
+      display: flex;
+      gap: 0.75rem;
+      align-items: center;
+    }
+
+    .bean {
+      width: 44px;
+      height: 28px;
+      border-radius: 50%;
+      background: radial-gradient(ellipse at 35% 35%, #3a2010, #1a0d04);
+      border: 2px solid rgba(196,151,42,0.2);
+      position: relative;
+      transition: transform 0.1s;
+      cursor: default;
+    }
+
+    .bean.hole-up {
+      background: radial-gradient(ellipse at 35% 35%, #5a3520, #2a1208);
+      border-color: rgba(196,151,42,0.5);
+    }
+    .bean.hole-up::after {
+      content: '';
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #0f0c08, #1a0d04);
+      box-shadow: inset 0 2px 4px rgba(0,0,0,0.8);
+    }
+
+    @keyframes beanRoll {
+      0% { transform: rotate(0deg) scale(1); }
+      25% { transform: rotate(180deg) scale(0.9); }
+      50% { transform: rotate(360deg) scale(1.1); }
+      75% { transform: rotate(540deg) scale(0.95); }
+      100% { transform: rotate(720deg) scale(1); }
+    }
+    .bean.rolling { animation: beanRoll 0.5s ease; }
+
+    .roll-result {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.1rem;
+      color: var(--gold);
+      letter-spacing: 0.05em;
+      min-height: 1.5rem;
+      text-align: center;
+    }
+
+    .roll-btn {
+      background: none;
+      border: 1px solid rgba(196,151,42,0.5);
+      color: var(--parchment);
+      font-family: 'DM Mono', monospace;
+      font-size: 0.75rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      padding: 0.6rem 2rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
+      overflow: hidden;
+    }
+    .roll-btn::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: rgba(196,151,42,0);
+      transition: background 0.2s;
+    }
+    .roll-btn:hover:not(:disabled)::before { background: rgba(196,151,42,0.08); }
+    .roll-btn:hover:not(:disabled) { border-color: var(--gold); }
+    .roll-btn:disabled { opacity: 0.3; cursor: default; }
+
+    /* ---- PIECE LEGEND ---- */
+    .piece-legend {
+      display: flex;
+      gap: 2rem;
+      font-size: 0.65rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 0.5rem;
+    }
+    .legend-item { display: flex; align-items: center; gap: 0.5rem; }
+    .legend-dot {
+      width: 14px; height: 14px; border-radius: 50%;
+    }
+    .legend-dot.p1 { background: var(--p1color); }
+    .legend-dot.p2 { background: var(--p2color); }
+
+    /* ---- CONTROLS ---- */
+    .controls {
+      display: flex;
+      gap: 0.75rem;
+      margin-top: 0.5rem;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .ctrl-btn {
+      background: none;
+      border: 1px solid rgba(196,151,42,0.25);
+      color: rgba(245,240,232,0.6);
+      font-family: 'DM Mono', monospace;
+      font-size: 0.68rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 0.45rem 1.1rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .ctrl-btn:hover:not(:disabled) { border-color: var(--gold); color: var(--parchment); background: rgba(196,151,42,0.06); }
+    .ctrl-btn:disabled { opacity: 0.25; cursor: default; }
+
+    /* ---- HISTORY ---- */
+    .history-panel {
+      margin-top: 2rem;
+      width: 100%;
+      max-width: 500px;
+      border-top: 1px solid rgba(196,151,42,0.12);
+      padding-top: 1.5rem;
+    }
+    .history-title { font-size: 0.58rem; letter-spacing: 0.25em; text-transform: uppercase; color: var(--muted); margin-bottom: 1rem; }
+    .history-list { display: flex; flex-direction: column; gap: 0.3rem; max-height: 160px; overflow-y: auto; }
+    .history-list::-webkit-scrollbar { width: 3px; }
+    .history-list::-webkit-scrollbar-thumb { background: rgba(196,151,42,0.15); }
+    @keyframes slideIn { from{opacity:0;transform:translateX(-6px)}to{opacity:1;transform:none} }
+    .history-entry {
+      display: flex; align-items: center; gap: 0.6rem;
+      font-size: 0.68rem; color: rgba(245,240,232,0.45);
+      padding: 0.25rem 0;
+      border-bottom: 1px solid rgba(196,151,42,0.05);
+      animation: slideIn 0.2s ease;
+    }
+    .history-num { color: rgba(196,151,42,0.25); min-width: 1.5rem; text-align: right; font-size: 0.58rem; }
+    .history-player { font-size: 0.58rem; padding: 0.12rem 0.35rem; }
+    .history-player.p1 { background: rgba(196,151,42,0.15); color: var(--gold); }
+    .history-player.p2 { background: rgba(139,58,28,0.2); color: var(--sienna); }
+
+    /* ---- MODAL ---- */
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.88); z-index: 200; align-items: center; justify-content: center; padding: 2rem; }
+    .modal-overlay.open { display: flex; }
+    @keyframes modalIn { from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none} }
+    .modal { background: #160f08; border: 1px solid rgba(196,151,42,0.25); max-width: 500px; width: 100%; padding: 2.5rem; position: relative; animation: modalIn 0.3s ease; }
+    .modal-close { position: absolute; top: 1rem; right: 1rem; background: none; border: none; color: var(--muted); font-size: 1.1rem; cursor: pointer; transition: color 0.2s; }
+    .modal-close:hover { color: var(--parchment); }
+    .modal h2 { font-family: 'Playfair Display', serif; font-size: 1.5rem; margin-bottom: 0.25rem; }
+    .modal .sub { font-size: 0.62rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--gold); margin-bottom: 1.5rem; }
+    .rules-list { list-style: none; counter-reset: rules; }
+    .rules-list li { counter-increment: rules; padding: 0.45rem 0 0.45rem 2rem; position: relative; border-bottom: 1px solid rgba(196,151,42,0.07); font-size: 0.8rem; line-height: 1.65; color: rgba(245,240,232,0.7); }
+    .rules-list li:last-child { border-bottom: none; }
+    .rules-list li::before { content: counter(rules); position: absolute; left: 0; font-size: 0.62rem; color: var(--gold); top: 0.6rem; }
+    .rules-list strong { color: var(--parchment); }
+  </style>
+</head>
+<body>
+
+  <a href="../games/patolli.html" class="back-link">← Back to Patolli</a>
+  <h1 class="game-title">Patolli</h1>
+  <p class="game-subtitle">Aztec Race Game · Kalah Variant</p>
+
+  <div class="mode-selector">
+    <button class="mode-btn active" id="btn2p" onclick="setMode('2p')">2 Players</button>
+    <button class="mode-btn" id="btnAI" onclick="setMode('ai')">vs Computer</button>
+  </div>
+
+  <div class="status-bar p1" id="statusBar">Player 1's turn — roll the beans</div>
+
+  <div class="score-tracker">
+    <div class="score-block">
+      <div class="score-name">Player 1</div>
+      <div class="score-wins" id="p1wins">0</div>
+    </div>
+    <div class="score-divider">wins</div>
+    <div class="score-block">
+      <div class="score-name" id="p2name">Player 2</div>
+      <div class="score-wins" id="p2wins">0</div>
+    </div>
+  </div>
+
+  <div class="board-area">
+    <div class="piece-legend">
+      <div class="legend-item"><div class="legend-dot p1"></div><span id="p1legend">Player 1</span></div>
+      <div class="legend-item"><div class="legend-dot p2"></div><span id="p2legend">Player 2</span></div>
+    </div>
+    <div class="board-container">
+      <canvas id="boardCanvas" width="460" height="460"></canvas>
+    </div>
+
+    <div class="dice-area">
+      <div class="beans-row" id="beansRow">
+        <div class="bean" id="b0"></div>
+        <div class="bean" id="b1"></div>
+        <div class="bean" id="b2"></div>
+        <div class="bean" id="b3"></div>
+        <div class="bean" id="b4"></div>
+      </div>
+      <div class="roll-result" id="rollResult">Cast the sacred beans to begin</div>
+      <button class="roll-btn" id="rollBtn" onclick="rollBeans()">⬡ Cast Beans</button>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button class="ctrl-btn" onclick="resetGame()">↺ New Game</button>
+    <button class="ctrl-btn" id="undoBtn" onclick="undoMove()" disabled>↩ Undo</button>
+    <button class="ctrl-btn" onclick="openRules()">? Rules</button>
+  </div>
+
+  <div class="history-panel">
+    <div class="history-title">Move History</div>
+    <div class="history-list" id="historyList"></div>
+  </div>
+
+  <div class="modal-overlay" id="rulesModal">
+    <div class="modal">
+      <button class="modal-close" onclick="closeRules()">✕</button>
+      <h2>How to Play</h2>
+      <p class="sub">Patolli · Aztec Race Game</p>
+      <ol class="rules-list">
+        <li>Each player has <strong>6 pieces</strong> (stones) which start off the board. The board is a cross of 52 squares, with 4 marked <strong>safe squares</strong> at the ends of each arm.</li>
+        <li>Cast the <strong>5 sacred beans</strong> to move. Count how many land hole-side up. All holes down = <strong>10</strong> (the most sacred throw).</li>
+        <li>A throw of <strong>1</strong> lets you enter a new piece onto the board. Otherwise move an existing piece forward by the number shown.</li>
+        <li>Pieces travel <strong>counter-clockwise</strong> around the full cross and must exit off the board to score. First to get all 6 pieces off wins.</li>
+        <li><strong>Safe squares</strong> (marked with ✦) protect your pieces — they cannot be captured there.</li>
+        <li><strong>Capture:</strong> Landing exactly on an opponent's piece sends it back off the board — it must re-enter with a roll of 1.</li>
+        <li>If you roll but <strong>cannot move</strong> (no valid moves), your turn passes.</li>
+      </ol>
+    </div>
+  </div>
+
+<script>
+// ============================================================
+// BOARD DEFINITION
+// 52 squares arranged as a cross. Each square has x,y (canvas),
+// and flags: safe, penalty.
+// Players travel in order: squares 0→51 (P1) and 26→25 (P2, offset by 26)
+// ============================================================
+
+const CANVAS_SIZE = 460;
+const SQ = 40; // square size
+const GAP = 2;
+
+// Build the 52-square cross path
+// The cross: top arm (down), right arm (left→right), bottom arm (up), left arm (right→left)
+// Center cell is excluded. Each arm = 13 squares (0-12, 13-25, 26-38, 39-51)
+
+function buildSquares() {
+  const squares = [];
+  const cx = CANVAS_SIZE / 2;
+  const cy = CANVAS_SIZE / 2;
+
+  // ARM positions: each arm has 13 squares
+  // Top arm: col=center, rows going down from top  (indices 0-12)
+  // Right arm: row=center, cols going right        (indices 13-25)
+  // Bottom arm: col=center, rows going up          (indices 26-38)
+  // Left arm: row=center, cols going left          (indices 39-51)
+
+  const armLen = 13;
+  // center of board in grid units
+  // arm width = 1 cell, so arms are 1 wide
+
+  // We'll lay arms from outer edge inward, then continue
+  // Top arm: x = cx - SQ/2, y starts at top, goes down to center
+  // Safe squares: index 0,12 (ends of top arm), 13,25 (ends of right), 26,38 (ends of bottom), 39,51 (ends of left)
+
+  for (let i = 0; i < 13; i++) {
+    const x = cx - SQ / 2;
+    const y = cy - (7 - i) * (SQ + GAP) - SQ / 2;
+    squares.push({ x, y, safe: i === 0 || i === 6 });
+  }
+  for (let i = 0; i < 13; i++) {
+    const x = cx + (i - 6) * (SQ + GAP) - SQ / 2;
+    const y = cy - SQ / 2;
+    squares.push({ x, y, safe: i === 0 || i === 6 });
+  }
+  for (let i = 0; i < 13; i++) {
+    const x = cx - SQ / 2;
+    const y = cy + (i - 6) * (SQ + GAP) - SQ / 2;
+    squares.push({ x, y, safe: i === 0 || i === 6 });
+  }
+  for (let i = 0; i < 13; i++) {
+    const x = cx - (i - 6) * (SQ + GAP) - SQ / 2;
+    const y = cy - SQ / 2;
+    squares.push({ x, y, safe: i === 0 || i === 6 });
+  }
+
+  return squares;
+}
+
+const SQUARES = buildSquares();
+const TOTAL = 52;
+
+// P1 starts at square 0, travels 0→51, exits after 51
+// P2 starts at square 26 (opposite side), travels 26→51→0→25, exits after 25
+function getSquareIndex(player, progress) {
+  // progress: 0-51 = position on board, 52 = off board (scored)
+  if (player === 1) return progress % TOTAL;
+  return (progress + 26) % TOTAL;
+}
+
+// ============================================================
+// GAME STATE
+// ============================================================
+let mode = '2p';
+let currentPlayer = 1;
+let gameOver = false;
+let rolled = false;
+let rollValue = 0;
+let wins = [0, 0];
+let history = [];
+let undoStack = [];
+let aiThinking = false;
+
+// Each player has 6 pieces. progress = -1 (off board, not yet entered),
+// 0-51 (on board), 52 (scored/exited)
+let pieces = {
+  1: Array(6).fill(-1),
+  2: Array(6).fill(-1)
+};
+
+// ============================================================
+// CANVAS DRAWING
+// ============================================================
+const canvas = document.getElementById('boardCanvas');
+const ctx = canvas.getContext('2d');
+
+function drawBoard() {
+  ctx.clearRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
+
+  // Background
+  ctx.fillStyle = '#0f0c08';
+  ctx.fillRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
+
+  // Draw cross background (arms)
+  const cx = CANVAS_SIZE / 2;
+  const cy = CANVAS_SIZE / 2;
+  const armW = SQ + GAP * 2;
+  const armH = 7 * (SQ + GAP) + SQ;
+
+  ctx.fillStyle = 'rgba(196,151,42,0.06)';
+  // vertical arm
+  ctx.fillRect(cx - armW / 2, cy - armH / 2, armW, armH);
+  // horizontal arm
+  ctx.fillRect(cx - armH / 2, cy - armW / 2, armH, armW);
+
+  // Draw squares
+  SQUARES.forEach((sq, i) => {
+    const isHighlighted = getHighlightedSquares().includes(i);
+
+    // Base square
+    ctx.fillStyle = sq.safe ? 'rgba(45,107,74,0.5)' : 'rgba(30,20,10,0.9)';
+    roundRect(ctx, sq.x, sq.y, SQ, SQ, 4);
+    ctx.fill();
+
+    // Border
+    ctx.strokeStyle = sq.safe ? 'rgba(61,139,96,0.7)' : 'rgba(196,151,42,0.18)';
+    ctx.lineWidth = 1;
+    roundRect(ctx, sq.x, sq.y, SQ, SQ, 4);
+    ctx.stroke();
+
+    // Highlight for valid moves
+    if (isHighlighted) {
+      ctx.fillStyle = 'rgba(196,151,42,0.25)';
+      roundRect(ctx, sq.x, sq.y, SQ, SQ, 4);
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(196,151,42,0.8)';
+      ctx.lineWidth = 1.5;
+      roundRect(ctx, sq.x, sq.y, SQ, SQ, 4);
+      ctx.stroke();
+    }
+
+    // Safe marker
+    if (sq.safe) {
+      ctx.fillStyle = 'rgba(61,139,96,0.8)';
+      ctx.font = '10px serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      ctx.fillText('✦', sq.x + SQ / 2, sq.y + 2);
+    }
+  });
+
+  // Center decoration
+  ctx.fillStyle = 'rgba(196,151,42,0.08)';
+  ctx.beginPath();
+  ctx.arc(cx, cy, 22, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(196,151,42,0.2)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+  ctx.fillStyle = 'rgba(196,151,42,0.3)';
+  ctx.font = 'bold 18px serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('☽', cx, cy);
+
+  // Draw pieces
+  drawPieces();
+}
+
+function drawPieces() {
+  // Group pieces by square to handle stacking
+  const bySquare = {};
+  [1, 2].forEach(p => {
+    pieces[p].forEach((prog, idx) => {
+      if (prog < 0 || prog >= TOTAL) return;
+      const sqIdx = getSquareIndex(p, prog);
+      if (!bySquare[sqIdx]) bySquare[sqIdx] = [];
+      bySquare[sqIdx].push({ player: p, pieceIdx: idx });
+    });
+  });
+
+  Object.entries(bySquare).forEach(([sqIdx, group]) => {
+    const sq = SQUARES[parseInt(sqIdx)];
+    group.forEach((item, stackIdx) => {
+      const offset = (stackIdx - (group.length - 1) / 2) * 6;
+      const px = sq.x + SQ / 2 + offset;
+      const py = sq.y + SQ / 2;
+      const r = 10;
+      const color = item.player === 1 ? '#c4972a' : '#8b3a1c';
+      const highlight = item.player === 1 ? '#e8c060' : '#c05030';
+
+      ctx.beginPath();
+      ctx.arc(px, py, r, 0, Math.PI * 2);
+      ctx.fillStyle = color;
+      ctx.fill();
+
+      // Inner shine
+      ctx.beginPath();
+      ctx.arc(px - 3, py - 3, 4, 0, Math.PI * 2);
+      ctx.fillStyle = highlight;
+      ctx.globalAlpha = 0.5;
+      ctx.fill();
+      ctx.globalAlpha = 1;
+
+      ctx.beginPath();
+      ctx.arc(px, py, r, 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgba(245,240,232,0.2)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    });
+  });
+
+  // Off-board piece indicators
+  drawOffBoardPieces();
+}
+
+function drawOffBoardPieces() {
+  // P1: bottom area, P2: top area
+  const p1waiting = pieces[1].filter(p => p === -1).length;
+  const p1scored  = pieces[1].filter(p => p >= TOTAL).length;
+  const p2waiting = pieces[2].filter(p => p === -1).length;
+  const p2scored  = pieces[2].filter(p => p >= TOTAL).length;
+
+  const cx = CANVAS_SIZE / 2;
+
+  // P1 waiting (bottom-left)
+  drawPieceGroup(60, 420, p1waiting, '#c4972a', 'waiting');
+  // P1 scored (bottom-right)
+  drawPieceGroup(400, 420, p1scored, '#c4972a', 'scored');
+  // P2 waiting (top-left)
+  drawPieceGroup(60, 40, p2waiting, '#8b3a1c', 'waiting');
+  // P2 scored (top-right)
+  drawPieceGroup(400, 40, p2scored, '#8b3a1c', 'scored');
+}
+
+function drawPieceGroup(x, y, count, color, type) {
+  for (let i = 0; i < count; i++) {
+    const px = x + (i % 3) * 14;
+    const py = y + Math.floor(i / 3) * 14;
+    ctx.beginPath();
+    ctx.arc(px, py, 5, 0, Math.PI * 2);
+    ctx.fillStyle = type === 'scored' ? color : 'rgba(100,70,30,0.3)';
+    ctx.fill();
+    ctx.strokeStyle = type === 'scored' ? 'rgba(245,240,232,0.3)' : 'rgba(196,151,42,0.2)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+}
+
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+
+function getHighlightedSquares() {
+  if (!rolled || gameOver || aiThinking) return [];
+  const moves = getValidMoves(currentPlayer, rollValue);
+  return moves.map(m => {
+    if (m.type === 'enter') return getSquareIndex(currentPlayer, rollValue - 1);
+    const newProg = m.progress + rollValue;
+    if (newProg >= TOTAL) return -1;
+    return getSquareIndex(currentPlayer, newProg);
+  }).filter(s => s >= 0);
+}
+
+// ============================================================
+// CLICK HANDLER
+// ============================================================
+canvas.addEventListener('click', function(e) {
+  if (!rolled || gameOver || aiThinking) return;
+  if (mode === 'ai' && currentPlayer === 2) return;
+
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = canvas.width / rect.width;
+  const scaleY = canvas.height / rect.height;
+  const mx = (e.clientX - rect.left) * scaleX;
+  const my = (e.clientY - rect.top) * scaleY;
+
+  const moves = getValidMoves(currentPlayer, rollValue);
+  if (moves.length === 0) return;
+
+  // Find which square was clicked
+  for (let i = 0; i < SQUARES.length; i++) {
+    const sq = SQUARES[i];
+    if (mx >= sq.x && mx <= sq.x + SQ && my >= sq.y && my <= sq.y + SQ) {
+      // Find a move that targets this square
+      for (const mv of moves) {
+        let targetSq;
+        if (mv.type === 'enter') {
+          targetSq = getSquareIndex(currentPlayer, rollValue - 1);
+        } else {
+          const newProg = mv.progress + rollValue;
+          if (newProg >= TOTAL) continue;
+          targetSq = getSquareIndex(currentPlayer, newProg);
+        }
+        if (targetSq === i) {
+          executeMove(mv);
+          return;
+        }
+      }
+
+      // Also check if clicked on existing piece to select/move
+      for (const mv of moves) {
+        if (mv.type === 'move') {
+          const curSq = getSquareIndex(currentPlayer, mv.progress);
+          if (curSq === i) {
+            executeMove(mv);
+            return;
+          }
+        }
+      }
+    }
+  }
+});
+
+// ============================================================
+// GAME LOGIC
+// ============================================================
+function initBoard() {
+  currentPlayer = 1;
+  gameOver = false;
+  rolled = false;
+  rollValue = 0;
+  history = [];
+  undoStack = [];
+  aiThinking = false;
+  pieces = { 1: Array(6).fill(-1), 2: Array(6).fill(-1) };
+  updateRollBtn();
+  renderBeans([false,false,false,false,false]);
+  document.getElementById('rollResult').textContent = 'Cast the sacred beans to begin';
+  document.getElementById('undoBtn').disabled = true;
+  updateStatus();
+  drawBoard();
+  renderHistory();
+}
+
+function setMode(m) {
+  mode = m;
+  document.getElementById('btn2p').classList.toggle('active', m === '2p');
+  document.getElementById('btnAI').classList.toggle('active', m === 'ai');
+  const n = m === 'ai' ? 'Computer' : 'Player 2';
+  document.getElementById('p2name').textContent = n;
+  document.getElementById('p2legend').textContent = n;
+  wins = [0, 0];
+  document.getElementById('p1wins').textContent = 0;
+  document.getElementById('p2wins').textContent = 0;
+  initBoard();
+}
+
+function rollBeans() {
+  if (rolled || gameOver || aiThinking) return;
+
+  // Animate
+  const beans = document.querySelectorAll('.bean');
+  beans.forEach(b => { b.classList.remove('rolling'); void b.offsetWidth; b.classList.add('rolling'); });
+
+  setTimeout(() => {
+    const results = Array.from({length:5}, () => Math.random() < 0.5);
+    const holesUp = results.filter(Boolean).length;
+    rollValue = holesUp === 0 ? 10 : holesUp;
+
+    renderBeans(results);
+    rolled = true;
+
+    const label = rollValue === 10 ? '10 — Sacred throw!' : `${rollValue}`;
+    document.getElementById('rollResult').textContent = `Rolled: ${label}`;
+
+    const moves = getValidMoves(currentPlayer, rollValue);
+
+    if (moves.length === 0) {
+      // No valid moves — auto-pass
+      const pName = currentPlayer === 1 ? 'Player 1' : (mode === 'ai' ? 'Computer' : 'Player 2');
+      history.push({ player: currentPlayer, text: `Rolled ${rollValue} — no valid moves, turn passes` });
+      renderHistory();
+      rolled = false;
+      rollValue = 0;
+      currentPlayer = currentPlayer === 1 ? 2 : 1;
+      updateStatus();
+      updateRollBtn();
+      drawBoard();
+
+      if (mode === 'ai' && currentPlayer === 2 && !gameOver) triggerAI();
+      return;
+    }
+
+    // If only one move, auto-execute
+    if (moves.length === 1) {
+      setTimeout(() => executeMove(moves[0]), 300);
+      return;
+    }
+
+    updateRollBtn();
+    drawBoard();
+  }, 520);
+}
+
+function renderBeans(results) {
+  results.forEach((up, i) => {
+    const b = document.getElementById(`b${i}`);
+    b.classList.toggle('hole-up', up);
+  });
+}
+
+function getValidMoves(player, roll) {
+  const moves = [];
+  const ps = pieces[player];
+
+  ps.forEach((prog, idx) => {
+    if (prog >= TOTAL) return; // already scored
+
+    if (prog === -1) {
+      // Can enter with a roll of 1
+      if (roll === 1) {
+        // Check if entry square is blocked by own piece
+        const entrySq = getSquareIndex(player, 0);
+        const ownOnEntry = ps.some((p, i) => i !== idx && p >= 0 && p < TOTAL && getSquareIndex(player, p) === entrySq);
+        if (!ownOnEntry) moves.push({ type: 'enter', pieceIdx: idx, progress: -1 });
+      }
+    } else {
+      // Move forward
+      const newProg = prog + roll;
+      if (newProg >= TOTAL) {
+        // Exits the board — valid (scores the piece)
+        moves.push({ type: 'exit', pieceIdx: idx, progress: prog });
+        return;
+      }
+      const newSq = getSquareIndex(player, newProg);
+      // Can't land on own piece
+      const ownOnTarget = ps.some((p, i) => i !== idx && p >= 0 && p < TOTAL && getSquareIndex(player, p) === newSq);
+      if (!ownOnTarget) moves.push({ type: 'move', pieceIdx: idx, progress: prog });
+    }
+  });
+
+  return moves;
+}
+
+function executeMove(mv) {
+  if (!rolled) return;
+
+  // Save undo snapshot
+  if (!(mode === 'ai' && currentPlayer === 2)) {
+    undoStack.push({
+      pieces: { 1: [...pieces[1]], 2: [...pieces[2]] },
+      currentPlayer,
+      history: [...history],
+      rolled, rollValue
+    });
+  }
+
+  const player = currentPlayer;
+  const opp = player === 1 ? 2 : 1;
+  let histText = '';
+  let captured = false;
+
+  if (mv.type === 'enter') {
+    pieces[player][mv.pieceIdx] = 0;
+    histText = `Rolled 1 — entered a piece`;
+  } else if (mv.type === 'exit') {
+    pieces[player][mv.pieceIdx] = TOTAL; // scored
+    histText = `Rolled ${rollValue} — piece scores!`;
+  } else {
+    const newProg = mv.progress + rollValue;
+    const newSq = getSquareIndex(player, newProg);
+
+    // Check capture
+    pieces[opp].forEach((oppProg, oppIdx) => {
+      if (oppProg < 0 || oppProg >= TOTAL) return;
+      const oppSq = getSquareIndex(opp, oppProg);
+      if (oppSq === newSq) {
+        // Check if safe
+        if (!SQUARES[newSq].safe) {
+          pieces[opp][oppIdx] = -1;
+          captured = true;
+        }
+      }
+    });
+
+    pieces[player][mv.pieceIdx] = newProg;
+    histText = captured
+      ? `Rolled ${rollValue} — captured a piece!`
+      : `Rolled ${rollValue} — moved forward`;
+  }
+
+  history.push({ player, text: histText });
+
+  // Check win
+  if (pieces[player].every(p => p >= TOTAL)) {
+    gameOver = true;
+    rolled = false;
+    drawBoard();
+    renderHistory();
+    showResult(player);
+    document.getElementById('undoBtn').disabled = true;
+    return;
+  }
+
+  rolled = false;
+  rollValue = 0;
+  currentPlayer = opp;
+  updateStatus();
+  updateRollBtn();
+  drawBoard();
+  renderHistory();
+  document.getElementById('undoBtn').disabled = undoStack.length === 0;
+
+  if (mode === 'ai' && currentPlayer === 2 && !gameOver) triggerAI();
+}
+
+// ============================================================
+// AI
+// ============================================================
+function triggerAI() {
+  aiThinking = true;
+  updateRollBtn();
+  const bar = document.getElementById('statusBar');
+  bar.className = 'status-bar thinking';
+  bar.textContent = 'Computer is thinking...';
+  drawBoard();
+
+  setTimeout(() => {
+    // AI rolls
+    const results = Array.from({length:5}, () => Math.random() < 0.5);
+    const holesUp = results.filter(Boolean).length;
+    rollValue = holesUp === 0 ? 10 : holesUp;
+    renderBeans(results);
+    rolled = true;
+
+    const label = rollValue === 10 ? '10 — Sacred throw!' : `${rollValue}`;
+    document.getElementById('rollResult').textContent = `Computer rolled: ${label}`;
+
+    setTimeout(() => {
+      const moves = getValidMoves(2, rollValue);
+      if (moves.length === 0) {
+        history.push({ player: 2, text: `Rolled ${rollValue} — no valid moves, turn passes` });
+        renderHistory();
+        rolled = false; rollValue = 0; aiThinking = false;
+        currentPlayer = 1;
+        updateStatus(); updateRollBtn(); drawBoard();
+        return;
+      }
+
+      // AI strategy: prefer captures, then exits, then advances furthest piece
+      let best = moves[0];
+      let bestScore = -Infinity;
+      for (const mv of moves) {
+        let score = 0;
+        if (mv.type === 'exit') score = 100;
+        else if (mv.type === 'enter') score = 20;
+        else {
+          const newProg = mv.progress + rollValue;
+          const newSq = getSquareIndex(2, newProg);
+          // Check if captures
+          const captureable = pieces[1].some(p => p >= 0 && p < TOTAL && getSquareIndex(1, p) === newSq && !SQUARES[newSq].safe);
+          if (captureable) score = 80;
+          else score = newProg; // prefer advancing
+        }
+        if (score > bestScore) { bestScore = score; best = mv; }
+      }
+
+      aiThinking = false;
+      executeMove(best);
+    }, 600);
+  }, 700);
+}
+
+// ============================================================
+// UNDO
+// ============================================================
+function undoMove() {
+  if (!undoStack.length) return;
+  const s = undoStack.pop();
+  pieces = { 1: [...s.pieces[1]], 2: [...s.pieces[2]] };
+  currentPlayer = s.currentPlayer;
+  history = [...s.history];
+  rolled = false; rollValue = 0; gameOver = false; aiThinking = false;
+  updateStatus(); updateRollBtn(); drawBoard(); renderHistory();
+  document.getElementById('undoBtn').disabled = undoStack.length === 0;
+  document.getElementById('rollResult').textContent = 'Cast the sacred beans to begin';
+  renderBeans([false,false,false,false,false]);
+}
+
+// ============================================================
+// UI HELPERS
+// ============================================================
+function updateStatus() {
+  const bar = document.getElementById('statusBar');
+  const name = currentPlayer === 1 ? 'Player 1' : (mode === 'ai' ? 'Computer' : 'Player 2');
+  const phase = rolled ? 'click a highlighted square to move' : 'roll the beans';
+  bar.textContent = `${name}'s turn — ${phase}`;
+  bar.className = `status-bar p${currentPlayer}`;
+}
+
+function updateRollBtn() {
+  const btn = document.getElementById('rollBtn');
+  btn.disabled = rolled || gameOver || aiThinking || (mode === 'ai' && currentPlayer === 2);
+}
+
+function showResult(winner) {
+  const bar = document.getElementById('statusBar');
+  const name = winner === 1 ? 'Player 1' : (mode === 'ai' ? 'Computer' : 'Player 2');
+  bar.textContent = `🏆 ${name} wins! All 6 pieces home.`;
+  bar.className = 'status-bar gameover';
+  if (winner === 1) wins[0]++; else wins[1]++;
+  document.getElementById('p1wins').textContent = wins[0];
+  document.getElementById('p2wins').textContent = wins[1];
+  document.getElementById('rollBtn').disabled = true;
+}
+
+function renderHistory() {
+  const list = document.getElementById('historyList');
+  list.innerHTML = '';
+  history.slice().reverse().forEach((entry, i) => {
+    const div = document.createElement('div');
+    div.className = 'history-entry';
+    const num = document.createElement('span');
+    num.className = 'history-num';
+    num.textContent = history.length - i;
+    const p = document.createElement('span');
+    p.className = `history-player p${entry.player}`;
+    p.textContent = entry.player === 1 ? 'P1' : (mode === 'ai' ? 'CPU' : 'P2');
+    const t = document.createElement('span');
+    t.textContent = entry.text;
+    div.appendChild(num); div.appendChild(p); div.appendChild(t);
+    list.appendChild(div);
+  });
+}
+
+function openRules() { document.getElementById('rulesModal').classList.add('open'); }
+function closeRules() { document.getElementById('rulesModal').classList.remove('open'); }
+document.getElementById('rulesModal').addEventListener('click', e => {
+  if (e.target === document.getElementById('rulesModal')) closeRules();
+});
+
+function resetGame() { initBoard(); }
+
+// Start
+initBoard();
+</script>
+</body>
+</html>
