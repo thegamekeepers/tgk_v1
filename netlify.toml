@@ -1,0 +1,4 @@
+[build]
+  base    = "boardgames-world"
+  publish = "boardgames-world"
+  functions = "boardgames-world/netlify/functions"
