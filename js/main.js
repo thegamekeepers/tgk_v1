@@ -25,20 +25,45 @@ function toggleContact() {
   form.classList.toggle('open');
   btn.textContent = isOpen ? '✉ Get in Touch' : '✕ Close';
   if (isOpen) {
-    // Reset form when closing
     document.getElementById('formSuccess').classList.remove('visible');
     const f = form.querySelector('.contact-form');
     if (f) f.style.display = 'flex';
+    const err = document.getElementById('formError');
+    if (err) { err.style.display = 'none'; err.textContent = ''; }
   }
 }
 
 // Contact form submission
-function handleSubmit(e) {
+async function handleSubmit(e) {
   e.preventDefault();
-  // Hide the form, show success message
-  e.target.style.display = 'none';
-  document.getElementById('formSuccess').classList.add('visible');
-  document.getElementById('contactBtn').textContent = '✕ Close';
-  // NOTE: To actually send emails, sign up for a free service like
-  // Formspree (formspree.io) and replace this function with their code snippet.
+  const btn = document.getElementById('formSubmitBtn');
+  const err = document.getElementById('formError');
+  const name    = document.getElementById('contactName').value;
+  const email   = document.getElementById('contactEmail').value;
+  const message = document.getElementById('contactMsg').value;
+
+  btn.textContent = 'Sending...';
+  btn.disabled = true;
+  err.style.display = 'none';
+
+  try {
+    const res = await fetch('/.netlify/functions/contact', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, email, message })
+    });
+
+    if (res.ok) {
+      e.target.style.display = 'none';
+      document.getElementById('formSuccess').classList.add('visible');
+      document.getElementById('contactBtn').textContent = '✕ Close';
+    } else {
+      throw new Error('Server error');
+    }
+  } catch {
+    err.textContent = 'Something went wrong — please try again or email us directly.';
+    err.style.display = 'block';
+    btn.textContent = 'Send Message';
+    btn.disabled = false;
+  }
 }
