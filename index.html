@@ -173,9 +173,10 @@
             <textarea id="contactMsg" rows="4" placeholder="Tell us about a game we should cover, or just say hello..." required></textarea>
           </div>
           <div class="form-actions">
-            <button type="submit" class="form-submit">Send Message</button>
+            <button type="submit" class="form-submit" id="formSubmitBtn">Send Message</button>
             <button type="button" class="form-cancel" onclick="toggleContact()">Cancel</button>
           </div>
+          <p id="formError" style="display:none; margin-top:0.75rem; font-size:0.8rem; color:#c0392b;"></p>
         </form>
         <div class="form-success" id="formSuccess">
           <span class="success-icon">✓</span>
