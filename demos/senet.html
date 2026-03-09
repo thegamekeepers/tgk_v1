@@ -1,0 +1,1245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Senet — The Game Keeper</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&family=Cinzel:wght@400;600&family=IM+Fell+English:ital@0;1&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --gold: #C9A84C;
+    --gold-light: #E8C96A;
+    --gold-dark: #8B6914;
+    --papyrus: #F2E8C8;
+    --papyrus-dark: #D4C49A;
+    --lapis: #1A3A5C;
+    --lapis-light: #2E5A8C;
+    --terracotta: #8B3A2A;
+    --sand: #E8D5A3;
+    --dark-wood: #2A1A08;
+    --ebony: #1A0F00;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background-color: var(--dark-wood);
+    background-image: 
+      radial-gradient(ellipse at 20% 50%, rgba(139, 105, 20, 0.15) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 50%, rgba(26, 58, 92, 0.2) 0%, transparent 60%),
+      repeating-linear-gradient(
+        90deg,
+        transparent,
+        transparent 2px,
+        rgba(201, 168, 76, 0.03) 2px,
+        rgba(201, 168, 76, 0.03) 4px
+      );
+    min-height: 100vh;
+    font-family: 'Cinzel', serif;
+    color: var(--papyrus);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+  }
+
+  /* Decorative border top */
+  .border-strip {
+    width: 100%;
+    max-width: 800px;
+    height: 12px;
+    background: linear-gradient(90deg, 
+      var(--terracotta), var(--gold), var(--lapis), var(--gold), var(--terracotta), 
+      var(--gold), var(--lapis), var(--gold), var(--terracotta));
+    border-radius: 2px;
+    margin-bottom: 8px;
+  }
+
+  header {
+    text-align: center;
+    margin-bottom: 24px;
+    width: 100%;
+    max-width: 800px;
+  }
+
+  .site-name {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 11px;
+    letter-spacing: 6px;
+    color: var(--gold);
+    text-transform: uppercase;
+    opacity: 0.7;
+    margin-bottom: 6px;
+  }
+
+  h1 {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: clamp(28px, 5vw, 48px);
+    color: var(--gold-light);
+    text-shadow: 0 0 40px rgba(201, 168, 76, 0.4), 0 2px 4px rgba(0,0,0,0.8);
+    letter-spacing: 4px;
+    line-height: 1.1;
+  }
+
+  .subtitle {
+    font-family: 'IM Fell English', serif;
+    font-style: italic;
+    font-size: 14px;
+    color: var(--papyrus-dark);
+    margin-top: 6px;
+    letter-spacing: 1px;
+  }
+
+  /* Hieroglyph decoration */
+  .hieroglyphs {
+    font-size: 22px;
+    margin: 8px 0;
+    opacity: 0.5;
+    letter-spacing: 8px;
+    color: var(--gold);
+  }
+
+  /* Main game container */
+  .game-container {
+    background: linear-gradient(145deg, #3D2B10, #2A1A08, #1A0F00);
+    border: 1px solid var(--gold-dark);
+    border-radius: 4px;
+    padding: 28px;
+    width: 100%;
+    max-width: 800px;
+    box-shadow: 
+      0 0 0 1px rgba(201,168,76,0.1),
+      0 0 60px rgba(0,0,0,0.8),
+      inset 0 1px 0 rgba(201,168,76,0.1);
+    position: relative;
+  }
+
+  .game-container::before {
+    content: '';
+    position: absolute;
+    top: 8px; left: 8px; right: 8px; bottom: 8px;
+    border: 1px solid rgba(201,168,76,0.12);
+    border-radius: 2px;
+    pointer-events: none;
+  }
+
+  /* Player panels */
+  .players-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    gap: 16px;
+  }
+
+  .player-panel {
+    flex: 1;
+    background: rgba(0,0,0,0.3);
+    border: 1px solid rgba(201,168,76,0.2);
+    border-radius: 3px;
+    padding: 12px 16px;
+    transition: all 0.3s ease;
+  }
+
+  .player-panel.active {
+    border-color: var(--gold);
+    background: rgba(201,168,76,0.08);
+    box-shadow: 0 0 20px rgba(201,168,76,0.15);
+  }
+
+  .player-name {
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--gold-dark);
+    margin-bottom: 4px;
+  }
+
+  .player-panel.active .player-name {
+    color: var(--gold);
+  }
+
+  .player-label {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 16px;
+    color: var(--papyrus-dark);
+  }
+
+  .player-panel.active .player-label {
+    color: var(--papyrus);
+  }
+
+  .pieces-remaining {
+    font-size: 11px;
+    color: var(--gold-dark);
+    margin-top: 4px;
+  }
+
+  .vs-divider {
+    font-family: 'Cinzel Decorative', serif;
+    color: var(--gold-dark);
+    font-size: 18px;
+    opacity: 0.5;
+  }
+
+  /* Board */
+  .board-wrapper {
+    position: relative;
+  }
+
+  .board-label {
+    font-size: 10px;
+    letter-spacing: 4px;
+    color: rgba(201,168,76,0.3);
+    text-align: center;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+  }
+
+  .board {
+    display: grid;
+    grid-template-columns: repeat(10, 1fr);
+    gap: 3px;
+    background: var(--gold-dark);
+    border: 2px solid var(--gold-dark);
+    border-radius: 2px;
+    padding: 3px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.05);
+  }
+
+  .cell {
+    aspect-ratio: 1;
+    background: var(--sand);
+    border-radius: 1px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    position: relative;
+    transition: all 0.2s ease;
+    flex-direction: column;
+    gap: 1px;
+    overflow: hidden;
+  }
+
+  .cell::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(255,255,255,0.08) 0%, transparent 50%);
+    pointer-events: none;
+  }
+
+  /* Row 2 goes right to left (cells 10-19) */
+  /* Row 3 goes left to right (cells 20-29) */
+
+  .cell:hover:not(.empty-hover) {
+    filter: brightness(1.1);
+    transform: translateY(-1px);
+    z-index: 2;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+  }
+
+  .cell.highlighted {
+    background: rgba(201, 168, 76, 0.3);
+    border: 2px solid var(--gold);
+    box-shadow: 0 0 12px rgba(201,168,76,0.5);
+    animation: pulse 1s ease-in-out infinite alternate;
+  }
+
+  .cell.selected {
+    background: rgba(46, 90, 140, 0.4);
+    border: 2px solid var(--lapis-light);
+    box-shadow: 0 0 12px rgba(46,90,140,0.5);
+  }
+
+  @keyframes pulse {
+    from { box-shadow: 0 0 8px rgba(201,168,76,0.4); }
+    to   { box-shadow: 0 0 20px rgba(201,168,76,0.8); }
+  }
+
+  /* Special squares */
+  .cell.special-rebirth { background: linear-gradient(135deg, #d4a820, #8B6914); }
+  .cell.special-water   { background: linear-gradient(135deg, #1A4A7A, #0D2A4A); }
+  .cell.special-three   { background: linear-gradient(135deg, #5A8A3A, #2A4A1A); }
+  .cell.special-two     { background: linear-gradient(135deg, #7A4A2A, #4A2A1A); }
+  .cell.special-ra      { background: linear-gradient(135deg, #AA6020, #6A3A10); }
+  .cell.special-horus   { background: linear-gradient(135deg, #6A3A8A, #3A1A5A); }
+
+  .cell-symbol {
+    font-size: clamp(10px, 2vw, 18px);
+    line-height: 1;
+    pointer-events: none;
+  }
+
+  .cell-num {
+    font-size: 7px;
+    color: rgba(0,0,0,0.3);
+    position: absolute;
+    top: 2px;
+    left: 3px;
+    font-family: monospace;
+  }
+
+  /* Pieces */
+  .piece {
+    width: 62%;
+    height: 62%;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: clamp(8px, 1.5vw, 13px);
+    font-weight: bold;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.2);
+    position: relative;
+    z-index: 1;
+    pointer-events: none;
+    transition: transform 0.2s;
+    flex-shrink: 0;
+  }
+
+  .piece.cone {
+    background: radial-gradient(circle at 35% 35%, #F5F5DC, #C8B870, #8B7530);
+    color: var(--dark-wood);
+    border: 2px solid rgba(139,117,48,0.6);
+  }
+
+  .piece.spool {
+    background: radial-gradient(circle at 35% 35%, #3A3A3A, #1A1A1A, #000);
+    color: var(--gold);
+    border: 2px solid rgba(80,60,20,0.6);
+  }
+
+  /* When two pieces share a cell, shrink them */
+  .cell.two-pieces .piece {
+    width: 44%;
+    height: 44%;
+  }
+
+  /* Sticks / dice */
+  .dice-area {
+    margin: 16px 0;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    justify-content: center;
+  }
+
+  .sticks-display {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .stick {
+    width: 36px;
+    height: 10px;
+    border-radius: 20px;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+  }
+
+  .stick.light { background: linear-gradient(90deg, var(--papyrus), var(--sand), var(--papyrus)); }
+  .stick.dark  { background: linear-gradient(90deg, #3A2A10, #1A0F00, #3A2A10); }
+
+  @keyframes roll {
+    0%   { transform: rotateY(0deg) rotateZ(0deg); }
+    25%  { transform: rotateY(180deg) rotateZ(30deg); }
+    50%  { transform: rotateY(360deg) rotateZ(60deg); }
+    75%  { transform: rotateY(540deg) rotateZ(90deg); }
+    100% { transform: rotateY(720deg) rotateZ(0deg); }
+  }
+
+  .stick.rolling { animation: roll 0.5s ease-out; }
+
+  .roll-result {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 28px;
+    color: var(--gold-light);
+    text-shadow: 0 0 20px rgba(201,168,76,0.6);
+    min-width: 40px;
+    text-align: center;
+  }
+
+  .roll-label {
+    font-size: 9px;
+    letter-spacing: 3px;
+    color: var(--gold-dark);
+    text-transform: uppercase;
+    text-align: center;
+    margin-top: -8px;
+  }
+
+  /* Buttons */
+  .btn {
+    font-family: 'Cinzel', serif;
+    font-size: 13px;
+    letter-spacing: 2px;
+    padding: 10px 24px;
+    background: linear-gradient(145deg, var(--gold-dark), var(--gold), var(--gold-dark));
+    color: var(--dark-wood);
+    border: none;
+    border-radius: 2px;
+    cursor: pointer;
+    text-transform: uppercase;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.2);
+    transition: all 0.2s ease;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(255,255,255,0.15) 0%, transparent 50%);
+    pointer-events: none;
+  }
+
+  .btn:hover {
+    background: linear-gradient(145deg, var(--gold), var(--gold-light), var(--gold));
+    transform: translateY(-1px);
+    box-shadow: 0 4px 16px rgba(201,168,76,0.4);
+  }
+
+  .btn:active { transform: translateY(0); }
+
+  .btn:disabled {
+    background: linear-gradient(145deg, #3A3020, #2A2010, #3A3020);
+    color: rgba(201,168,76,0.3);
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+
+  /* Status area */
+  .status-area {
+    background: rgba(0,0,0,0.3);
+    border: 1px solid rgba(201,168,76,0.15);
+    border-radius: 2px;
+    padding: 12px 16px;
+    margin: 16px 0;
+    text-align: center;
+  }
+
+  .status-text {
+    font-family: 'IM Fell English', serif;
+    font-style: italic;
+    font-size: 15px;
+    color: var(--papyrus-dark);
+    line-height: 1.5;
+  }
+
+  .status-text .highlight {
+    color: var(--gold-light);
+    font-style: normal;
+    font-family: 'Cinzel', serif;
+    font-size: 13px;
+    letter-spacing: 1px;
+  }
+
+  /* Escaped pieces row */
+  .escaped-area {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 16px;
+    gap: 16px;
+  }
+
+  .escaped-panel {
+    flex: 1;
+    background: rgba(0,0,0,0.2);
+    border: 1px solid rgba(201,168,76,0.1);
+    border-radius: 2px;
+    padding: 10px 14px;
+  }
+
+  .escaped-label {
+    font-size: 9px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--gold-dark);
+    margin-bottom: 8px;
+  }
+
+  .escaped-pieces {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .escaped-piece {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+  }
+
+  .escaped-piece.cone {
+    background: radial-gradient(circle at 35% 35%, #F5F5DC, #C8B870, #8B7530);
+    color: var(--dark-wood);
+    border: 2px solid rgba(139,117,48,0.6);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+  }
+
+  .escaped-piece.spool {
+    background: radial-gradient(circle at 35% 35%, #3A3A3A, #1A1A1A, #000);
+    color: var(--gold);
+    border: 2px solid rgba(80,60,20,0.6);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+  }
+
+  /* Rules panel */
+  .rules-toggle {
+    background: none;
+    border: 1px solid rgba(201,168,76,0.2);
+    color: var(--gold-dark);
+    font-family: 'Cinzel', serif;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 6px 14px;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: all 0.2s;
+    margin-top: 16px;
+  }
+
+  .rules-toggle:hover {
+    border-color: var(--gold);
+    color: var(--gold);
+  }
+
+  .rules-panel {
+    background: rgba(0,0,0,0.4);
+    border: 1px solid rgba(201,168,76,0.12);
+    border-radius: 2px;
+    padding: 20px;
+    margin-top: 12px;
+    display: none;
+  }
+
+  .rules-panel.open { display: block; }
+
+  .rules-panel h3 {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 14px;
+    color: var(--gold);
+    margin-bottom: 12px;
+    letter-spacing: 2px;
+  }
+
+  .rules-panel p, .rules-panel li {
+    font-family: 'IM Fell English', serif;
+    font-size: 13px;
+    color: var(--papyrus-dark);
+    line-height: 1.7;
+    margin-bottom: 6px;
+  }
+
+  .rules-panel ul { padding-left: 20px; }
+
+  .rules-panel .square-legend {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 6px 16px;
+    margin-top: 10px;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'IM Fell English', serif;
+    font-size: 12px;
+    color: var(--papyrus-dark);
+  }
+
+  .legend-swatch {
+    width: 20px;
+    height: 20px;
+    border-radius: 2px;
+    flex-shrink: 0;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Win overlay */
+  .win-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(10,5,0,0.9);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .win-overlay.show { display: flex; }
+
+  .win-card {
+    background: linear-gradient(145deg, #3D2B10, #2A1A08);
+    border: 2px solid var(--gold);
+    border-radius: 4px;
+    padding: 48px 60px;
+    text-align: center;
+    box-shadow: 0 0 60px rgba(201,168,76,0.4);
+    max-width: 400px;
+  }
+
+  .win-symbol {
+    font-size: 60px;
+    margin-bottom: 12px;
+  }
+
+  .win-title {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 28px;
+    color: var(--gold-light);
+    text-shadow: 0 0 30px rgba(201,168,76,0.6);
+    margin-bottom: 8px;
+  }
+
+  .win-subtitle {
+    font-family: 'IM Fell English', serif;
+    font-style: italic;
+    color: var(--papyrus-dark);
+    font-size: 15px;
+    margin-bottom: 24px;
+  }
+
+  footer {
+    margin-top: 20px;
+    font-size: 9px;
+    letter-spacing: 4px;
+    color: rgba(201,168,76,0.2);
+    text-transform: uppercase;
+    text-align: center;
+  }
+
+  /* Responsive */
+  @media (max-width: 500px) {
+    .game-container { padding: 16px; }
+    .stick { width: 26px; height: 8px; }
+    .cell-num { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="border-strip"></div>
+<header>
+  <div class="site-name">The Game Keeper</div>
+  <div class="hieroglyphs">𓂀 𓆣 𓏏 𓆣 𓂀</div>
+  <h1>SENET</h1>
+  <div class="subtitle">The Sacred Game of Ancient Egypt · circa 3100 BCE</div>
+</header>
+
+<div class="game-container">
+
+  <div class="players-row">
+    <div class="player-panel active" id="panel-0">
+      <div class="player-name">Player One</div>
+      <div class="player-label">⊙ Cones</div>
+      <div class="pieces-remaining" id="remain-0">5 pieces on board</div>
+    </div>
+    <div class="vs-divider">𓆣</div>
+    <div class="player-panel" id="panel-1">
+      <div class="player-name">Player Two</div>
+      <div class="player-label">◉ Spools</div>
+      <div class="pieces-remaining" id="remain-1">5 pieces on board</div>
+    </div>
+  </div>
+
+  <div class="board-label">← Square 10 &nbsp;&nbsp; Row I &nbsp;&nbsp; Square 1 →</div>
+  <div class="board" id="board"></div>
+
+  <div class="dice-area">
+    <div>
+      <div class="sticks-display" id="sticks-display">
+        <div class="stick light" id="s0"></div>
+        <div class="stick light" id="s1"></div>
+        <div class="stick light" id="s2"></div>
+        <div class="stick light" id="s3"></div>
+      </div>
+      <div class="roll-label">Casting Sticks</div>
+    </div>
+    <div>
+      <div class="roll-result" id="roll-result">—</div>
+      <div class="roll-label">Moves</div>
+    </div>
+    <button class="btn" id="roll-btn" onclick="rollDice()">Cast Sticks</button>
+    <button class="btn" id="new-game-btn" onclick="newGame()" style="background:linear-gradient(145deg,#3A2A10,#2A1A08,#3A2A10);color:var(--gold-dark);border:1px solid var(--gold-dark);">New Game</button>
+  </div>
+
+  <div class="status-area">
+    <div class="status-text" id="status-text">
+      <span class="highlight">Player One</span> — Cast the sticks to begin your journey to the Field of Reeds.
+    </div>
+  </div>
+
+  <div class="escaped-area">
+    <div class="escaped-panel">
+      <div class="escaped-label">Escaped — Cones</div>
+      <div class="escaped-pieces" id="escaped-0"></div>
+    </div>
+    <div class="escaped-panel" style="text-align:right;">
+      <div class="escaped-label">Escaped — Spools</div>
+      <div class="escaped-pieces" id="escaped-1" style="justify-content:flex-end; display:flex; flex-wrap:wrap; gap:6px;"></div>
+    </div>
+  </div>
+
+  <div style="text-align:center;">
+    <button class="rules-toggle" onclick="toggleRules()">▾ How to Play</button>
+  </div>
+
+  <div class="rules-panel" id="rules-panel">
+    <h3>The Rules of Senet</h3>
+    <p>Senet is one of the oldest known board games, played in Ancient Egypt for over 3,000 years. The board has <strong>30 squares</strong> arranged in a serpentine path. Each player has <strong>5 pieces</strong> and races to be the first to bear all pieces off the board.</p>
+    <ul>
+      <li>Players alternate turns. Cast the 4 sticks — each has a light and dark side.</li>
+      <li>Count the <em>light sides up</em> for your move. All dark = move <strong>5</strong>.</li>
+      <li>You may not land on your own piece. You may <strong>swap</strong> with an opponent's piece unless it is protected.</li>
+      <li>Two or more consecutive opponent pieces form a <strong>blockade</strong> — you may not pass through.</li>
+      <li>To bear off, you must land <em>exactly</em> on square 30 and roll the required number; or be on squares 26–29 and roll past the board.</li>
+    </ul>
+    <div class="square-legend">
+      <div class="legend-item">
+        <div class="legend-swatch" style="background:linear-gradient(135deg,#d4a820,#8B6914);">𓂀</div>
+        Sq. 15 — House of Rebirth (return here if hit from sq. 27)
+      </div>
+      <div class="legend-item">
+        <div class="legend-swatch" style="background:linear-gradient(135deg,#1A4A7A,#0D2A4A);">𓆣</div>
+        Sq. 27 — House of Water (return to sq. 15 or start)
+      </div>
+      <div class="legend-item">
+        <div class="legend-swatch" style="background:linear-gradient(135deg,#5A8A3A,#2A4A1A);">𓏏</div>
+        Sq. 26 — House of Happiness (safe, roll 2 or more to escape)
+      </div>
+      <div class="legend-item">
+        <div class="legend-swatch" style="background:linear-gradient(135deg,#AA6020,#6A3A10);">☀</div>
+        Sq. 28 — House of Ra-Horakhty (roll 3 to escape)
+      </div>
+      <div class="legend-item">
+        <div class="legend-swatch" style="background:linear-gradient(135deg,#7A4A2A,#4A2A1A);">𓆙</div>
+        Sq. 29 — House of Two Truths (roll 2 to escape)
+      </div>
+      <div class="legend-item">
+        <div class="legend-swatch" style="background:linear-gradient(135deg,#6A3A8A,#3A1A5A);">𓁐</div>
+        Sq. 30 — House of Horus (roll 1 to escape)
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="win-overlay" id="win-overlay">
+  <div class="win-card">
+    <div class="win-symbol" id="win-symbol">𓂀</div>
+    <div class="win-title" id="win-title">Victory!</div>
+    <div class="win-subtitle" id="win-subtitle">The gods smile upon you.</div>
+    <button class="btn" onclick="newGame(); document.getElementById('win-overlay').classList.remove('show')">Play Again</button>
+  </div>
+</div>
+
+<footer>The Game Keeper · Ancient Games for Modern Players</footer>
+
+<script>
+// ═══════════════════════════════════════════════
+//  SENET GAME LOGIC
+// ═══════════════════════════════════════════════
+
+const BOARD_SIZE = 30;
+const PIECES_PER_PLAYER = 5;
+
+// Special squares (1-indexed)
+const SPECIAL = {
+  15: { cls: 'special-rebirth', sym: '𓂀', tip: 'Rebirth' },
+  26: { cls: 'special-three',   sym: '𓏏', tip: 'Happiness' },
+  27: { cls: 'special-water',   sym: '𓆣', tip: 'Water' },
+  28: { cls: 'special-ra',      sym: '☀',  tip: 'Ra' },
+  29: { cls: 'special-two',     sym: '𓆙', tip: 'Two Truths' },
+  30: { cls: 'special-horus',   sym: '𓁐', tip: 'Horus' },
+};
+
+// Escape requirements: must roll exactly this to leave from square
+const ESCAPE_ROLL = { 26: 2, 27: null, 28: 3, 29: 2, 30: 1 };
+
+let state = {};
+
+function newGame() {
+  state = {
+    board: Array(BOARD_SIZE).fill(null), // null | {player:0|1}
+    escaped: [0, 0],
+    currentPlayer: 0,
+    phase: 'roll',  // 'roll' | 'move'
+    roll: 0,
+    selected: -1,
+    validMoves: [],
+    gameOver: false,
+  };
+
+  // Place pieces: alternating starting positions 0..9 (squares 1-10)
+  // Cones on even indices, spools on odd
+  const startPositions = [0,1,2,3,4,5,6,7,8,9];
+  for (let i = 0; i < PIECES_PER_PLAYER; i++) {
+    state.board[i*2]   = { player: 0 }; // cone on 0,2,4,6,8
+    state.board[i*2+1] = { player: 1 }; // spool on 1,3,5,7,9
+  }
+
+  renderBoard();
+  updateUI();
+  document.getElementById('roll-result').textContent = '—';
+  setSticks([true,true,true,true]);
+  document.getElementById('roll-btn').disabled = false;
+}
+
+// ── BOARD PATH ──────────────────────────────────
+// Square 1 = index 0, displayed at grid position:
+// Row 1: squares 1-10  → grid cols 10,9,8,...,1 (right to left)
+// Row 2: squares 11-20 → grid cols 1,2,...,10   (left to right after flip)
+// Row 3: squares 21-30 → grid cols 10,9,...,1   (right to left)
+// We store squares in a flat array[0..29] and map to DOM cells.
+
+function boardIndexToGridPos(idx) {
+  // idx: 0-29 (square 1-30)
+  const sq = idx + 1;
+  if (sq <= 10) {
+    return { row: 0, col: 10 - sq };         // row0, right-to-left
+  } else if (sq <= 20) {
+    return { row: 1, col: sq - 11 };         // row1, left-to-right
+  } else {
+    return { row: 2, col: 30 - sq };         // row2, right-to-left
+  }
+}
+
+function renderBoard() {
+  const boardEl = document.getElementById('board');
+  boardEl.innerHTML = '';
+
+  // Create 30 cells arranged in a 10×3 grid
+  const cells = Array.from({ length: 30 }, () => null);
+  
+  for (let idx = 0; idx < BOARD_SIZE; idx++) {
+    const { row, col } = boardIndexToGridPos(idx);
+    const sq = idx + 1;
+    const cell = document.createElement('div');
+    cell.className = 'cell';
+    cell.dataset.idx = idx;
+
+    if (SPECIAL[sq]) {
+      cell.classList.add(SPECIAL[sq].cls);
+    }
+
+    // Square number
+    const numEl = document.createElement('div');
+    numEl.className = 'cell-num';
+    numEl.textContent = sq;
+    cell.appendChild(numEl);
+
+    // Special symbol
+    if (SPECIAL[sq]) {
+      const symEl = document.createElement('div');
+      symEl.className = 'cell-symbol';
+      symEl.textContent = SPECIAL[sq].sym;
+      cell.appendChild(symEl);
+    }
+
+    cell.addEventListener('click', () => handleCellClick(idx));
+    cells[row * 10 + col] = cell;
+  }
+
+  // We need row 2 (squares 11-20) to be displayed left-to-right (cols 0-9)
+  // but path goes right (sq11 at col0, sq20 at col9) — ✓ already correct
+
+  cells.forEach(c => boardEl.appendChild(c));
+}
+
+function updateUI() {
+  const { board, currentPlayer, phase, selected, validMoves, escaped } = state;
+
+  // Player panels
+  [0,1].forEach(p => {
+    const panel = document.getElementById(`panel-${p}`);
+    panel.classList.toggle('active', p === currentPlayer);
+    const onBoard = board.filter(c => c && c.player === p).length;
+    document.getElementById(`remain-${p}`).textContent =
+      `${onBoard} on board, ${escaped[p]} escaped`;
+  });
+
+  // Escaped pieces
+  [0,1].forEach(p => {
+    const el = document.getElementById(`escaped-${p}`);
+    el.innerHTML = '';
+    for (let i = 0; i < escaped[p]; i++) {
+      const ep = document.createElement('div');
+      ep.className = `escaped-piece ${p === 0 ? 'cone' : 'spool'}`;
+      ep.textContent = p === 0 ? '⊙' : '◉';
+      el.appendChild(ep);
+    }
+  });
+
+  // Cells: clear highlights
+  document.querySelectorAll('.cell').forEach(cell => {
+    cell.classList.remove('highlighted', 'selected', 'two-pieces');
+    // Remove old pieces
+    cell.querySelectorAll('.piece').forEach(p => p.remove());
+  });
+
+  // Place pieces
+  board.forEach((piece, idx) => {
+    if (!piece) return;
+    const { row, col } = boardIndexToGridPos(idx);
+    const cellEl = document.querySelector(`.cell[data-idx="${idx}"]`);
+    if (!cellEl) return;
+
+    const pEl = document.createElement('div');
+    pEl.className = `piece ${piece.player === 0 ? 'cone' : 'spool'}`;
+    pEl.textContent = piece.player === 0 ? '⊙' : '◉';
+    cellEl.appendChild(pEl);
+  });
+
+  // Selection highlight
+  if (selected >= 0) {
+    const selCell = document.querySelector(`.cell[data-idx="${selected}"]`);
+    if (selCell) selCell.classList.add('selected');
+  }
+
+  // Valid moves highlight
+  validMoves.forEach(idx => {
+    if (idx < BOARD_SIZE) {
+      const c = document.querySelector(`.cell[data-idx="${idx}"]`);
+      if (c) c.classList.add('highlighted');
+    }
+  });
+
+  document.getElementById('roll-btn').disabled = phase !== 'roll';
+}
+
+// ── DICE ────────────────────────────────────────
+function rollDice() {
+  if (state.phase !== 'roll' || state.gameOver) return;
+
+  // Animate sticks
+  const stickEls = document.querySelectorAll('.stick');
+  stickEls.forEach(s => { s.classList.remove('rolling'); void s.offsetWidth; s.classList.add('rolling'); });
+
+  setTimeout(() => {
+    const results = [Math.random()<0.5, Math.random()<0.5, Math.random()<0.5, Math.random()<0.5];
+    const lightCount = results.filter(Boolean).length;
+    state.roll = lightCount === 0 ? 5 : lightCount; // all dark = 5
+
+    setSticks(results);
+    document.getElementById('roll-result').textContent = state.roll;
+
+    state.phase = 'move';
+    state.selected = -1;
+    state.validMoves = [];
+
+    const movable = getMovablePieces(state.currentPlayer, state.roll);
+
+    if (movable.length === 0) {
+      setStatus(`<span class="highlight">${playerName(state.currentPlayer)}</span> — No valid moves. Turn passes.`);
+      setTimeout(() => {
+        endTurn(false);
+      }, 1400);
+    } else {
+      setStatus(`<span class="highlight">${playerName(state.currentPlayer)}</span> — Rolled <strong>${state.roll}</strong>. Select a piece to move.`);
+      updateUI();
+    }
+  }, 520);
+}
+
+function setSticks(results) {
+  results.forEach((isLight, i) => {
+    const el = document.getElementById(`s${i}`);
+    el.className = 'stick ' + (isLight ? 'light' : 'dark');
+  });
+}
+
+// ── MOVEMENT LOGIC ──────────────────────────────
+function getMovablePieces(player, roll) {
+  const movable = [];
+  state.board.forEach((cell, idx) => {
+    if (cell && cell.player === player) {
+      const target = idx + roll;
+      if (canMoveTo(player, idx, target)) {
+        movable.push(idx);
+      }
+    }
+  });
+  return movable;
+}
+
+function canMoveTo(player, from, to) {
+  // Check escape
+  if (to >= BOARD_SIZE) {
+    return canEscape(from, state.roll);
+  }
+  // Can't land on own piece
+  if (state.board[to] && state.board[to].player === player) return false;
+  // Check blockade: if landing on opponent but consecutive opponents adjacent
+  // Actually in Senet: you can SWAP with a lone opponent. Blocked by 2+ consecutive.
+  if (state.board[to] && state.board[to].player !== player) {
+    // Check if this opponent piece is protected (consecutive chain of >=2)
+    if (isProtected(to, 1 - player)) return false;
+  }
+  // Can't jump over a blockade
+  if (isBlockadeBetween(from, to, player)) return false;
+  return true;
+}
+
+function isProtected(idx, player) {
+  // A piece is protected if it's part of a consecutive run of >=2 same-player pieces
+  const count = consecutiveRun(idx, player);
+  return count >= 2;
+}
+
+function consecutiveRun(idx, player) {
+  // Count how long a run of `player` pieces this index is part of
+  if (!state.board[idx] || state.board[idx].player !== player) return 0;
+  let len = 1;
+  let i = idx - 1;
+  while (i >= 0 && state.board[i] && state.board[i].player === player) { len++; i--; }
+  i = idx + 1;
+  while (i < BOARD_SIZE && state.board[i] && state.board[i].player === player) { len++; i++; }
+  return len;
+}
+
+function isBlockadeBetween(from, to, player) {
+  // Check if there's a blockade (2+ consecutive opponent) between from and to
+  const opp = 1 - player;
+  for (let i = from + 1; i < to && i < BOARD_SIZE; i++) {
+    if (state.board[i] && state.board[i].player === opp) {
+      if (isProtected(i, opp)) return true;
+    }
+  }
+  return false;
+}
+
+function canEscape(from, roll) {
+  const sq = from + 1; // 1-indexed
+  // Must be in last 5 squares
+  if (sq < 26) return false;
+  // Special escape rules
+  if (ESCAPE_ROLL[sq] !== undefined) {
+    return roll === ESCAPE_ROLL[sq] || (roll > ESCAPE_ROLL[sq] && sq + roll > BOARD_SIZE);
+  }
+  return sq + roll > BOARD_SIZE;
+}
+
+// ── CELL CLICK ──────────────────────────────────
+function handleCellClick(idx) {
+  if (state.phase !== 'move' || state.gameOver) return;
+  const { board, currentPlayer, roll } = state;
+
+  // Clicking own piece — select it
+  if (board[idx] && board[idx].player === currentPlayer) {
+    const target = idx + roll;
+    if (!canMoveTo(currentPlayer, idx, target)) {
+      setStatus(`<span class="highlight">${playerName(currentPlayer)}</span> — Cannot move that piece. Choose another.`);
+      return;
+    }
+    state.selected = idx;
+    state.validMoves = [idx + roll < BOARD_SIZE ? idx + roll : BOARD_SIZE]; // signal
+    // Actually show valid landing
+    state.validMoves = target < BOARD_SIZE ? [target] : [];
+    updateUI();
+    return;
+  }
+
+  // Clicking a valid destination
+  if (state.selected >= 0) {
+    const from = state.selected;
+    const target = from + roll;
+
+    if (idx === target && target < BOARD_SIZE) {
+      movePiece(from, target);
+      return;
+    }
+    // Escape click — if they click same cell after selecting near end
+  }
+
+  // Clicking highlighted escape — handled via "escape" button? 
+  // Allow clicking selected piece again to trigger escape if valid
+}
+
+// Allow escape by clicking selected piece a second time, or any highlighted
+function movePiece(from, to) {
+  const { board, currentPlayer } = state;
+  const opponent = 1 - currentPlayer;
+
+  // Swap if opponent
+  if (board[to] && board[to].player === opponent) {
+    board[from] = { player: opponent };
+    board[to] = { player: currentPlayer };
+    // Water square: send swapped opponent back
+    handleSpecialSquare(from, opponent);
+  } else {
+    board[to] = board[from];
+    board[from] = null;
+    handleSpecialSquare(to, currentPlayer);
+  }
+
+  state.selected = -1;
+  state.validMoves = [];
+
+  checkWin();
+  if (!state.gameOver) {
+    const extraTurn = state.roll === 1 || state.roll === 4 || state.roll === 5;
+    endTurn(extraTurn);
+  }
+}
+
+function handleSpecialSquare(idx, player) {
+  const sq = idx + 1;
+  if (sq === 27) {
+    // House of Water: return to 15 (idx 14) or 14 if occupied
+    state.board[idx] = null;
+    let target = 14; // sq 15
+    if (state.board[target] && state.board[target].player !== player) {
+      // Swap
+    }
+    // Find first safe spot at or before sq 15
+    while (target >= 0 && state.board[target] && state.board[target].player !== player) {
+      target--;
+    }
+    if (target < 0) target = 0;
+    state.board[target] = { player };
+    setStatus(`<span class="highlight">${playerName(player)}</span>'s piece fell into the Water of Chaos — returned to the House of Rebirth!`);
+  }
+}
+
+function escapeCurrentPiece() {
+  if (state.selected < 0 || state.phase !== 'move') return;
+  const from = state.selected;
+  const target = from + state.roll;
+  if (target >= BOARD_SIZE && canEscape(from, state.roll)) {
+    state.board[from] = null;
+    state.escaped[state.currentPlayer]++;
+    state.selected = -1;
+    state.validMoves = [];
+    checkWin();
+    if (!state.gameOver) {
+      const extraTurn = state.roll === 1 || state.roll === 4 || state.roll === 5;
+      endTurn(extraTurn);
+    }
+  }
+}
+
+// ── SELECTION + ESCAPE ──────────────────────────
+// Override cell click to also handle escape
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('board').addEventListener('click', (e) => {
+    const cell = e.target.closest('.cell');
+    if (!cell) return;
+    const idx = parseInt(cell.dataset.idx);
+    
+    if (state.phase !== 'move' || state.gameOver) return;
+    const { board, currentPlayer, roll, selected } = state;
+
+    if (board[idx] && board[idx].player === currentPlayer) {
+      const target = idx + roll;
+      if (target >= BOARD_SIZE) {
+        // Escape move — clicking own piece in end zone
+        if (canEscape(idx, roll)) {
+          if (selected === idx) {
+            // Double-click: execute escape
+            board[idx] = null;
+            state.escaped[currentPlayer]++;
+            state.selected = -1;
+            state.validMoves = [];
+            checkWin();
+            if (!state.gameOver) {
+              const extraTurn = roll === 1 || roll === 4 || roll === 5;
+              endTurn(extraTurn);
+            }
+            return;
+          }
+          state.selected = idx;
+          state.validMoves = [];
+          setStatus(`<span class="highlight">${playerName(currentPlayer)}</span> — Click again to <strong>escape</strong> this piece off the board!`);
+          updateUI();
+          return;
+        }
+      } else if (canMoveTo(currentPlayer, idx, target)) {
+        if (selected === idx) {
+          // Double-click or click highlighted dest
+          movePiece(idx, target);
+          return;
+        }
+        state.selected = idx;
+        state.validMoves = [target];
+        setStatus(`<span class="highlight">${playerName(currentPlayer)}</span> — Move to square ${target+1}. Click the destination or click piece again to confirm.`);
+        updateUI();
+        return;
+      }
+    }
+
+    // Clicking a valid destination
+    if (selected >= 0 && idx === selected + roll && idx < BOARD_SIZE) {
+      if (canMoveTo(currentPlayer, selected, idx)) {
+        movePiece(selected, idx);
+      }
+    }
+  });
+
+  newGame();
+});
+
+function endTurn(extraTurn) {
+  if (extraTurn) {
+    state.phase = 'roll';
+    setStatus(`<span class="highlight">${playerName(state.currentPlayer)}</span> — Blessed roll! Take another turn.`);
+  } else {
+    state.currentPlayer = 1 - state.currentPlayer;
+    state.phase = 'roll';
+    setStatus(`<span class="highlight">${playerName(state.currentPlayer)}</span> — Your turn. Cast the sticks.`);
+  }
+  state.selected = -1;
+  state.validMoves = [];
+  updateUI();
+}
+
+function checkWin() {
+  [0,1].forEach(p => {
+    if (state.escaped[p] === PIECES_PER_PLAYER) {
+      state.gameOver = true;
+      updateUI();
+      setTimeout(() => showWin(p), 300);
+    }
+  });
+}
+
+function showWin(player) {
+  document.getElementById('win-symbol').textContent = player === 0 ? '𓂀' : '𓁐';
+  document.getElementById('win-title').textContent = `${playerName(player)} Victorious!`;
+  document.getElementById('win-subtitle').textContent = player === 0
+    ? 'The Cones have reached the Field of Reeds!'
+    : 'The Spools have crossed into the afterlife!';
+  document.getElementById('win-overlay').classList.add('show');
+}
+
+function playerName(p) {
+  return p === 0 ? 'Player One' : 'Player Two';
+}
+
+function setStatus(html) {
+  document.getElementById('status-text').innerHTML = html;
+}
+
+function toggleRules() {
+  const panel = document.getElementById('rules-panel');
+  panel.classList.toggle('open');
+}
+</script>
+</body>
+</html>
