@@ -644,7 +644,7 @@ function getHighlightedSquares() {
   if (!rolled || gameOver || aiThinking) return [];
   const moves = getValidMoves(currentPlayer, rollValue);
   return moves.map(m => {
-    if (m.type === 'enter') return getSquareIndex(currentPlayer, rollValue - 1);
+    if (m.type === 'enter') return getSquareIndex(currentPlayer, 0);
     const newProg = m.progress + rollValue;
     if (newProg >= TOTAL) return -1;
     return getSquareIndex(currentPlayer, newProg);
@@ -675,7 +675,7 @@ canvas.addEventListener('click', function(e) {
       for (const mv of moves) {
         let targetSq;
         if (mv.type === 'enter') {
-          targetSq = getSquareIndex(currentPlayer, rollValue - 1);
+          targetSq = getSquareIndex(currentPlayer, 0);
         } else {
           const newProg = mv.progress + rollValue;
           if (newProg >= TOTAL) continue;
@@ -738,7 +738,8 @@ function setMode(m) {
 function rollBeans() {
   if (rolled || gameOver || aiThinking) return;
 
-  // Animate
+  // Disable button immediately to prevent double-roll during animation
+  document.getElementById('rollBtn').disabled = true;
   const beans = document.querySelectorAll('.bean');
   beans.forEach(b => { b.classList.remove('rolling'); void b.offsetWidth; b.classList.add('rolling'); });
 
@@ -771,14 +772,14 @@ function rollBeans() {
       return;
     }
 
-    // If only one move, auto-execute
-    if (moves.length === 1) {
-      setTimeout(() => executeMove(moves[0]), 300);
-      return;
-    }
-
     updateRollBtn();
     drawBoard();
+
+    // If only one move, auto-execute after a brief delay so the board shows the highlight
+    if (moves.length === 1) {
+      setTimeout(() => executeMove(moves[0]), 600);
+      return;
+    }
   }, 520);
 }
 
