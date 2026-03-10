@@ -48,6 +48,10 @@
     <div class="section-header">
       <span class="section-label">The Collection</span>
       <h2>Featured Games</h2>
+      <div id="filterBar" style="display:none; margin-top:0.75rem; align-items:center; gap:1rem;">
+        <span id="filterLabel" style="font-size:0.7rem; letter-spacing:0.15em; text-transform:uppercase; color:var(--gold);"></span>
+        <button onclick="clearFilter()" style="background:none; border:1px solid rgba(196,151,42,0.3); color:var(--muted); font-family:'DM Mono',monospace; font-size:0.65rem; letter-spacing:0.1em; text-transform:uppercase; padding:0.3rem 0.8rem; cursor:pointer;">✕ Show All</button>
+      </div>
     </div>
 
     <div class="games-grid">
@@ -69,6 +73,7 @@
         <h3 class="card-title">Senet</h3>
         <p class="card-desc">Found in predynastic Egyptian tombs, Senet was more than a game — it was a ritual journey through the underworld, played alongside the dead.</p>
         <div class="card-footer">
+          <span class="card-demo-badge">▶ Playable Demo</span>
           <span class="card-arrow">→</span>
         </div>
       </a>
@@ -119,6 +124,7 @@
         <h3 class="card-title">Patolli</h3>
         <p class="card-desc">The sacred gambling game of the Aztecs, played on a cross-shaped board representing the cosmos. Emperor Montezuma himself was said to be an avid player.</p>
         <div class="card-footer">
+          <span class="card-demo-badge">▶ Playable Demo</span>
           <span class="card-arrow">→</span>
         </div>
       </a>
@@ -143,6 +149,17 @@
         </div>
       </a>
 
+      <a href="games/mu-torere.html" class="game-card" data-region="oceania">
+        <div class="card-region-tag">Aotearoa New Zealand</div>
+        <div class="card-era">Pre-European contact</div>
+        <h3 class="card-title">Mū Tōrere</h3>
+        <p class="card-desc">The only known traditional board game of the Māori people — deceptively simple on a star-shaped board, yet a game of real strategic depth and cultural significance.</p>
+        <div class="card-footer">
+          <span class="card-demo-badge">▶ Playable Demo</span>
+          <span class="card-arrow">→</span>
+        </div>
+      </a>
+
     </div>
   </section>
 
@@ -152,27 +169,27 @@
       <h2>Games by Region</h2>
     </div>
     <div class="regions-grid">
-      <a href="#" class="region-card">
+      <a href="#games" class="region-card" onclick="filterRegion('africa')">
         <span class="region-icon">🌍</span>
         <span class="region-name">Africa</span>
       </a>
-      <a href="#" class="region-card">
+      <a href="#games" class="region-card" onclick="filterRegion('asia')">
         <span class="region-icon">🌏</span>
         <span class="region-name">Asia</span>
       </a>
-      <a href="#" class="region-card">
+      <a href="#games" class="region-card" onclick="filterRegion('americas')">
         <span class="region-icon">🌎</span>
         <span class="region-name">Americas</span>
       </a>
-      <a href="#" class="region-card">
+      <a href="#games" class="region-card" onclick="filterRegion('europe')">
         <span class="region-icon">🏛️</span>
         <span class="region-name">Europe</span>
       </a>
-      <a href="#" class="region-card">
+      <a href="#games" class="region-card" onclick="filterRegion('middle-east')">
         <span class="region-icon">🕌</span>
         <span class="region-name">Middle East</span>
       </a>
-      <a href="#" class="region-card">
+      <a href="#games" class="region-card" onclick="filterRegion('oceania')">
         <span class="region-icon">🌊</span>
         <span class="region-name">Oceania</span>
       </a>
@@ -224,5 +241,26 @@
   </footer>
 
   <script src="js/main.js"></script>
+  <script>
+    function filterRegion(region) {
+      const cards = document.querySelectorAll('.game-card');
+      const bar = document.getElementById('filterBar');
+      const label = document.getElementById('filterLabel');
+      const names = {
+        africa: '🌍 Africa', asia: '🌏 Asia', americas: '🌎 Americas',
+        europe: '🏛️ Europe', 'middle-east': '🕌 Middle East', oceania: '🌊 Oceania'
+      };
+      cards.forEach(card => {
+        card.style.display = card.dataset.region === region ? '' : 'none';
+      });
+      label.textContent = `Showing: ${names[region]}`;
+      bar.style.display = 'flex';
+    }
+
+    function clearFilter() {
+      document.querySelectorAll('.game-card').forEach(card => card.style.display = '');
+      document.getElementById('filterBar').style.display = 'none';
+    }
+  </script>
 </body>
 </html>
