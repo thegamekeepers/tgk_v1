@@ -1,0 +1,905 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Play Nine Men's Morris — The Game Keeper</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --ink: #0e0c09;
+      --parchment: #f2ede0;
+      --gold: #c8a84b;
+      --sienna: #8b3a1c;
+      --muted: #7a7060;
+      --p1: #c8a84b;
+      --p1light: #f0cc70;
+      --p2: #8b3a1c;
+      --p2light: #c05030;
+      --board-bg: #2a1f0e;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--ink);
+      color: var(--parchment);
+      font-family: 'DM Mono', monospace;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem 1rem 4rem;
+      background-image:
+        radial-gradient(ellipse at 20% 20%, rgba(139,58,28,0.08) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 80%, rgba(200,168,75,0.06) 0%, transparent 50%);
+    }
+
+    .back-link { align-self:flex-start; color:var(--gold); text-decoration:none; font-size:0.75rem; letter-spacing:0.1em; margin-bottom:2rem; opacity:0.7; transition:opacity 0.2s; }
+    .back-link:hover { opacity:1; }
+
+    .game-title { font-family:'Playfair Display',serif; font-size:2.2rem; font-weight:700; margin-bottom:0.2rem; text-align:center; }
+    .game-subtitle { font-size:0.65rem; letter-spacing:0.28em; color:var(--gold); text-transform:uppercase; margin-bottom:1.5rem; text-align:center; }
+
+    .mode-selector { display:flex; gap:0.5rem; margin-bottom:1.5rem; }
+    .mode-btn { background:none; border:1px solid rgba(200,168,75,0.25); color:rgba(242,237,224,0.4); font-family:'DM Mono',monospace; font-size:0.68rem; letter-spacing:0.12em; text-transform:uppercase; padding:0.4rem 1rem; cursor:pointer; transition:all 0.2s; }
+    .mode-btn.active { border-color:var(--gold); color:var(--gold); background:rgba(200,168,75,0.08); }
+    .mode-btn:hover { border-color:var(--gold); color:var(--parchment); }
+
+    .status-bar { padding:0.65rem 2rem; font-size:0.78rem; letter-spacing:0.08em; margin-bottom:1.5rem; text-align:center; min-width:360px; border:1px solid rgba(200,168,75,0.2); background:rgba(200,168,75,0.04); transition:all 0.3s; }
+    .status-bar.p1 { border-color:rgba(200,168,75,0.6); background:rgba(200,168,75,0.08); }
+    .status-bar.p2 { border-color:rgba(139,58,28,0.6); background:rgba(139,58,28,0.1); }
+    .status-bar.capture { border-color:#c05030; background:rgba(192,80,48,0.12); color:#e07050; }
+    .status-bar.gameover { border-color:var(--gold); background:rgba(200,168,75,0.12); color:var(--gold); }
+    @keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.35} }
+    .status-bar.thinking { border-color:var(--gold); animation:pulse 1s ease infinite; }
+
+    .score-tracker { display:flex; gap:3rem; margin-bottom:1.5rem; align-items:center; }
+    .score-block { text-align:center; }
+    .score-name { font-size:0.58rem; letter-spacing:0.2em; text-transform:uppercase; color:var(--muted); margin-bottom:0.2rem; }
+    .score-wins { font-family:'Playfair Display',serif; font-size:1.8rem; font-weight:700; color:var(--gold); line-height:1; }
+    .score-divider { font-size:0.65rem; color:rgba(242,237,224,0.15); }
+
+    /* PIECE COUNTER */
+    .piece-counters { display:flex; gap:3rem; margin-bottom:1.5rem; }
+    .counter-block { text-align:center; }
+    .counter-label { font-size:0.55rem; letter-spacing:0.15em; text-transform:uppercase; color:var(--muted); margin-bottom:0.3rem; }
+    .counter-pips { display:flex; gap:0.3rem; flex-wrap:wrap; justify-content:center; max-width:130px; }
+    .pip { width:14px; height:14px; border-radius:50%; transition:all 0.3s; }
+    .pip.p1-active { background:var(--p1); box-shadow:0 0 4px rgba(200,168,75,0.5); }
+    .pip.p1-waiting { background:rgba(200,168,75,0.2); border:1px solid rgba(200,168,75,0.3); }
+    .pip.p1-lost { background:rgba(200,168,75,0.05); border:1px dashed rgba(200,168,75,0.1); }
+    .pip.p2-active { background:var(--p2); box-shadow:0 0 4px rgba(139,58,28,0.5); }
+    .pip.p2-waiting { background:rgba(139,58,28,0.2); border:1px solid rgba(139,58,28,0.3); }
+    .pip.p2-lost { background:rgba(139,58,28,0.05); border:1px dashed rgba(139,58,28,0.1); }
+
+    /* BOARD */
+    .board-wrap { position:relative; margin-bottom:1.5rem; }
+    #boardCanvas { display:block; cursor:default; }
+
+    .controls { display:flex; gap:0.75rem; flex-wrap:wrap; justify-content:center; margin-bottom:2rem; }
+    .ctrl-btn { background:none; border:1px solid rgba(200,168,75,0.25); color:rgba(242,237,224,0.6); font-family:'DM Mono',monospace; font-size:0.68rem; letter-spacing:0.1em; text-transform:uppercase; padding:0.45rem 1.1rem; cursor:pointer; transition:all 0.2s; }
+    .ctrl-btn:hover:not(:disabled) { border-color:var(--gold); color:var(--parchment); background:rgba(200,168,75,0.06); }
+    .ctrl-btn:disabled { opacity:0.25; cursor:default; }
+
+    .history-panel { width:100%; max-width:500px; border-top:1px solid rgba(200,168,75,0.1); padding-top:1.5rem; }
+    .history-title { font-size:0.58rem; letter-spacing:0.25em; text-transform:uppercase; color:var(--muted); margin-bottom:1rem; }
+    .history-list { display:flex; flex-direction:column; gap:0.3rem; max-height:160px; overflow-y:auto; }
+    .history-list::-webkit-scrollbar { width:3px; }
+    .history-list::-webkit-scrollbar-thumb { background:rgba(200,168,75,0.15); }
+    @keyframes slideIn { from{opacity:0;transform:translateX(-6px)}to{opacity:1;transform:none} }
+    .history-entry { display:flex; align-items:center; gap:0.6rem; font-size:0.68rem; color:rgba(242,237,224,0.45); padding:0.25rem 0; border-bottom:1px solid rgba(200,168,75,0.05); animation:slideIn 0.2s ease; }
+    .history-num { color:rgba(200,168,75,0.25); min-width:1.5rem; text-align:right; font-size:0.58rem; }
+    .history-player { font-size:0.58rem; padding:0.12rem 0.35rem; }
+    .history-player.p1 { background:rgba(200,168,75,0.15); color:var(--gold); }
+    .history-player.p2 { background:rgba(139,58,28,0.2); color:var(--p2light); }
+
+    .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:200; align-items:center; justify-content:center; padding:2rem; }
+    .modal-overlay.open { display:flex; }
+    @keyframes modalIn { from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none} }
+    .modal { background:#140f08; border:1px solid rgba(200,168,75,0.25); max-width:500px; width:100%; padding:2.5rem; position:relative; animation:modalIn 0.3s ease; max-height:90vh; overflow-y:auto; }
+    .modal-close { position:absolute; top:1rem; right:1rem; background:none; border:none; color:var(--muted); font-size:1.1rem; cursor:pointer; }
+    .modal-close:hover { color:var(--parchment); }
+    .modal h2 { font-family:'Playfair Display',serif; font-size:1.5rem; margin-bottom:0.25rem; }
+    .modal .sub { font-size:0.62rem; letter-spacing:0.18em; text-transform:uppercase; color:var(--gold); margin-bottom:1.5rem; }
+    .rules-list { list-style:none; counter-reset:rules; }
+    .rules-list li { counter-increment:rules; padding:0.45rem 0 0.45rem 2rem; position:relative; border-bottom:1px solid rgba(200,168,75,0.07); font-size:0.8rem; line-height:1.65; color:rgba(242,237,224,0.72); }
+    .rules-list li:last-child { border-bottom:none; }
+    .rules-list li::before { content:counter(rules); position:absolute; left:0; font-size:0.62rem; color:var(--gold); top:0.6rem; }
+    .rules-list strong { color:var(--parchment); }
+    .phase-badge { display:inline-block; font-size:0.58rem; letter-spacing:0.15em; text-transform:uppercase; padding:0.15rem 0.5rem; border:1px solid rgba(200,168,75,0.3); color:var(--gold); margin-bottom:0.5rem; }
+  </style>
+</head>
+<body>
+
+<a href="../games/nine-mens-morris.html" class="back-link">← Back to Nine Men's Morris</a>
+<h1 class="game-title">Nine Men's Morris</h1>
+<p class="game-subtitle">Medieval Strategy · Europe · ~1400 BC</p>
+
+<div class="mode-selector">
+  <button class="mode-btn active" id="btn2p" onclick="setMode('2p')">2 Players</button>
+  <button class="mode-btn" id="btnAI" onclick="setMode('ai')">vs Computer</button>
+</div>
+
+<div class="status-bar p1" id="statusBar">Player 1 — place a piece on any empty point</div>
+
+<div class="score-tracker">
+  <div class="score-block">
+    <div class="score-name">Player 1</div>
+    <div class="score-wins" id="p1wins">0</div>
+  </div>
+  <div class="score-divider">wins</div>
+  <div class="score-block">
+    <div class="score-name" id="p2name">Player 2</div>
+    <div class="score-wins" id="p2wins">0</div>
+  </div>
+</div>
+
+<div class="piece-counters">
+  <div class="counter-block">
+    <div class="counter-label" id="p1counter-label">Player 1 · 9 pieces</div>
+    <div class="counter-pips" id="p1pips"></div>
+  </div>
+  <div class="counter-block">
+    <div class="counter-label" id="p2counter-label">Player 2 · 9 pieces</div>
+    <div class="counter-pips" id="p2pips"></div>
+  </div>
+</div>
+
+<div class="board-wrap">
+  <canvas id="boardCanvas" width="480" height="480"></canvas>
+</div>
+
+<div class="controls">
+  <button class="ctrl-btn" onclick="resetGame()">↺ New Game</button>
+  <button class="ctrl-btn" id="undoBtn" onclick="undoMove()" disabled>↩ Undo</button>
+  <button class="ctrl-btn" onclick="openRules()">? Rules</button>
+</div>
+
+<div class="history-panel">
+  <div class="history-title">Move History</div>
+  <div class="history-list" id="historyList"></div>
+</div>
+
+<div class="modal-overlay" id="rulesModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeRules()">✕</button>
+    <h2>How to Play</h2>
+    <p class="sub">Nine Men's Morris · Three Phases</p>
+    <div class="phase-badge">Phase 1 — Placing</div>
+    <ol class="rules-list">
+      <li>Each player has <strong>9 pieces</strong>. Take turns placing one piece per turn onto any empty point on the board.</li>
+      <li>If you form a <strong>mill</strong> (three of your pieces in a row along any line), you may immediately remove one of your opponent's pieces from the board. You cannot remove a piece that is part of a mill unless no other pieces are available.</li>
+    </ol>
+    <div class="phase-badge" style="margin-top:1rem">Phase 2 — Moving</div>
+    <ol class="rules-list">
+      <li>Once all pieces are placed, players take turns <strong>sliding</strong> one piece to an adjacent empty point along a line.</li>
+      <li>Forming a mill again allows you to remove one of the opponent's pieces.</li>
+      <li>A player loses when reduced to <strong>2 pieces</strong>, or when they have no legal moves.</li>
+    </ol>
+    <div class="phase-badge" style="margin-top:1rem">Phase 3 — Flying</div>
+    <ol class="rules-list">
+      <li>When a player is reduced to exactly <strong>3 pieces</strong>, they may <strong>fly</strong> — moving any piece to any empty point on the board, not just adjacent ones.</li>
+    </ol>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// BOARD: 24 points, 3 concentric squares connected by lines
+//
+// Points are numbered 0-23:
+//   Outer square:  0(TL) 1(TM) 2(TR) 3(MR) 4(BR) 5(BM) 6(BL) 7(ML)
+//   Middle square: 8(TL) 9(TM) 10(TR) 11(MR) 12(BR) 13(BM) 14(BL) 15(ML)
+//   Inner square:  16(TL) 17(TM) 18(TR) 19(MR) 20(BR) 21(BM) 22(BL) 23(ML)
+//
+// Adjacency: each point connects to its square-neighbours and the cross-line point
+// Mills: every row of 3 along each line
+// ============================================================
+
+const S = 480, C = S / 2;
+const R = [200, 132, 64]; // radii of outer, middle, inner squares (half-side)
+
+// Point positions
+function makePositions() {
+  const pos = [];
+  // For each ring, 8 points: TL TM TR MR BR BM BL ML
+  R.forEach(r => {
+    pos.push(
+      {x: C-r, y: C-r}, // TL
+      {x: C,   y: C-r}, // TM
+      {x: C+r, y: C-r}, // TR
+      {x: C+r, y: C  }, // MR
+      {x: C+r, y: C+r}, // BR
+      {x: C,   y: C+r}, // BM
+      {x: C-r, y: C+r}, // BL
+      {x: C-r, y: C  }, // ML
+    );
+  });
+  return pos;
+}
+
+const POS = makePositions();
+
+// Adjacency list
+const ADJ = [
+  [1,7],   // 0
+  [0,2,9], // 1
+  [1,3],   // 2
+  [2,4,11],// 3
+  [3,5],   // 4
+  [4,6,13],// 5
+  [5,7],   // 6
+  [6,0,15],// 7
+  [9,15],  // 8
+  [8,10,1,17], // 9  -- connects outer TM and inner TM
+  [9,11],  // 10
+  [10,12,3,19],// 11
+  [11,13], // 12
+  [12,14,5,21],// 13
+  [13,15], // 14
+  [14,8,7,23], // 15
+  [17,23], // 16
+  [16,18,9],// 17
+  [17,19], // 18
+  [18,20,11],// 19
+  [19,21], // 20
+  [20,22,13],// 21
+  [21,23], // 22
+  [22,16,15],// 23
+];
+
+// All mills (rows of 3)
+const MILLS = [
+  [0,1,2],[2,3,4],[4,5,6],[6,7,0],       // outer square
+  [8,9,10],[10,11,12],[12,13,14],[14,15,8], // middle square
+  [16,17,18],[18,19,20],[20,21,22],[22,23,16], // inner square
+  [1,9,17],[3,11,19],[5,13,21],[7,15,23], // cross lines
+];
+
+// ============================================================
+// STATE
+// ============================================================
+let board = Array(24).fill(0); // 0=empty, 1=p1, 2=p2
+let phase = [1, 1]; // phase[0]=p1 phase, phase[1]=p2 phase (1=place,2=move,3=fly)
+let toPlace = [9, 9]; // pieces remaining to place
+let onBoard = [0, 0]; // pieces currently on board
+let currentPlayer = 1;
+let gameOver = false;
+let mustCapture = false; // after forming mill
+let selectedPoint = -1;
+let mode = '2p';
+let wins = [0, 0];
+let history = [];
+let undoStack = [];
+let aiThinking = false;
+let lastMill = []; // highlight last formed mill
+
+const canvas = document.getElementById('boardCanvas');
+const ctx = canvas.getContext('2d');
+
+// ============================================================
+// DRAWING
+// ============================================================
+function draw() {
+  ctx.clearRect(0, 0, S, S);
+
+  // Background
+  const bg = ctx.createRadialGradient(C, C, 20, C, C, S * 0.6);
+  bg.addColorStop(0, '#2a1f0e');
+  bg.addColorStop(1, '#1a1208');
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, S, S);
+
+  // Decorative corner marks
+  ctx.save();
+  ctx.globalAlpha = 0.06;
+  ctx.strokeStyle = '#c8a84b';
+  ctx.lineWidth = 6;
+  [[20,20],[460,20],[20,460],[460,460]].forEach(([x,y]) => {
+    ctx.beginPath(); ctx.arc(x, y, 18, 0, Math.PI*2); ctx.stroke();
+  });
+  ctx.restore();
+
+  // Draw the three squares
+  ctx.strokeStyle = 'rgba(150,110,50,0.7)';
+  ctx.lineWidth = 2;
+  R.forEach(r => {
+    ctx.strokeRect(C-r, C-r, r*2, r*2);
+  });
+
+  // Draw cross lines (top, right, bottom, left midpoints connecting rings)
+  const crosses = [
+    [POS[1], POS[9], POS[17]],  // top
+    [POS[3], POS[11], POS[19]], // right
+    [POS[5], POS[13], POS[21]], // bottom
+    [POS[7], POS[15], POS[23]], // left
+  ];
+  crosses.forEach(pts => {
+    ctx.beginPath();
+    ctx.moveTo(pts[0].x, pts[0].y);
+    pts.forEach(p => ctx.lineTo(p.x, p.y));
+    ctx.stroke();
+  });
+
+  // Highlight last mill
+  if (lastMill.length === 3) {
+    ctx.beginPath();
+    ctx.moveTo(POS[lastMill[0]].x, POS[lastMill[0]].y);
+    lastMill.forEach(i => ctx.lineTo(POS[i].x, POS[i].y));
+    ctx.strokeStyle = 'rgba(200,168,75,0.5)';
+    ctx.lineWidth = 5;
+    ctx.stroke();
+    ctx.lineWidth = 2;
+  }
+
+  // Valid targets / sources
+  const validSources = getValidSources();
+  const validTargets = selectedPoint >= 0 ? getValidTargets(selectedPoint) : [];
+
+  // Draw points
+  for (let i = 0; i < 24; i++) {
+    const p = POS[i];
+    const occupied = board[i];
+    const isSelected = i === selectedPoint;
+    const isValidSource = !mustCapture && validSources.includes(i) && occupied === currentPlayer;
+    const isValidTarget = validTargets.includes(i);
+    const isCapturable = mustCapture && isCaptureable(i);
+
+    const nodeR = 14;
+
+    // Node background
+    const grad = ctx.createRadialGradient(p.x-3, p.y-3, 1, p.x, p.y, nodeR);
+    grad.addColorStop(0, '#3a2a10');
+    grad.addColorStop(1, '#1e1508');
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, nodeR, 0, Math.PI*2);
+    ctx.fillStyle = grad;
+    ctx.fill();
+
+    // Border
+    let borderCol = 'rgba(90,64,32,0.5)';
+    if (isSelected) borderCol = 'rgba(200,168,75,1)';
+    else if (isValidTarget) borderCol = 'rgba(200,168,75,0.8)';
+    else if (isCapturable) borderCol = 'rgba(192,80,48,0.9)';
+    else if (isValidSource) borderCol = occupied === 1 ? 'rgba(200,168,75,0.5)' : 'rgba(139,58,28,0.6)';
+
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, nodeR, 0, Math.PI*2);
+    ctx.strokeStyle = borderCol;
+    ctx.lineWidth = isSelected || isValidTarget || isCapturable ? 2.5 : 1.5;
+    ctx.stroke();
+
+    // Glow
+    if (isValidTarget || isCapturable) {
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, nodeR + 5, 0, Math.PI*2);
+      ctx.strokeStyle = isCapturable ? 'rgba(192,80,48,0.25)' : 'rgba(200,168,75,0.2)';
+      ctx.lineWidth = 4;
+      ctx.stroke();
+    }
+
+    // Piece
+    if (occupied) drawPiece(p.x, p.y, occupied, isSelected);
+  }
+}
+
+function drawPiece(x, y, player, selected) {
+  const col    = player === 1 ? '#c8a84b' : '#8b3a1c';
+  const light  = player === 1 ? '#f0cc70' : '#c05030';
+  const dark   = player === 1 ? '#7a5018' : '#4a1008';
+  const r = 10;
+
+  ctx.beginPath();
+  ctx.arc(x+2, y+2, r, 0, Math.PI*2);
+  ctx.fillStyle = 'rgba(0,0,0,0.5)';
+  ctx.fill();
+
+  const g = ctx.createRadialGradient(x-3, y-3, 1, x, y, r);
+  g.addColorStop(0, light);
+  g.addColorStop(0.5, col);
+  g.addColorStop(1, dark);
+  ctx.beginPath();
+  ctx.arc(x, y, r, 0, Math.PI*2);
+  ctx.fillStyle = g;
+  ctx.fill();
+
+  ctx.beginPath();
+  ctx.arc(x, y, r, 0, Math.PI*2);
+  ctx.strokeStyle = selected ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.15)';
+  ctx.lineWidth = selected ? 2 : 1;
+  ctx.stroke();
+
+  if (selected) {
+    ctx.beginPath();
+    ctx.arc(x, y, r+5, 0, Math.PI*2);
+    ctx.strokeStyle = 'rgba(200,168,75,0.5)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  }
+}
+
+// ============================================================
+// LOGIC
+// ============================================================
+function getPhase(player) {
+  if (toPlace[player-1] > 0) return 1;
+  if (onBoard[player-1] === 3) return 3;
+  return 2;
+}
+
+function getValidSources() {
+  if (mustCapture || gameOver || aiThinking) return [];
+  const p = currentPlayer;
+  const ph = getPhase(p);
+  if (ph === 1) return []; // placing phase — no sources
+  return board.map((v,i) => v === p ? i : -1).filter(i => i >= 0).filter(i => {
+    if (ph === 3) return true; // flying — any own piece
+    return ADJ[i].some(j => board[j] === 0); // must have empty neighbour
+  });
+}
+
+function getValidTargets(from) {
+  if (mustCapture) return [];
+  const p = currentPlayer;
+  const ph = getPhase(p);
+  if (ph === 1) {
+    // Any empty point
+    return board.map((v,i) => v === 0 ? i : -1).filter(i => i >= 0);
+  }
+  if (ph === 3) {
+    return board.map((v,i) => v === 0 ? i : -1).filter(i => i >= 0 && i !== from);
+  }
+  return ADJ[from].filter(j => board[j] === 0);
+}
+
+function isCaptureable(i) {
+  if (!mustCapture) return false;
+  const opp = currentPlayer === 1 ? 2 : 1;
+  if (board[i] !== opp) return false;
+  // Can't capture a mill piece unless all opponent pieces are in mills
+  if (inMill(i, opp)) {
+    return board.every((v, j) => v !== opp || inMill(j, opp));
+  }
+  return true;
+}
+
+function inMill(idx, player) {
+  return MILLS.some(m => m.includes(idx) && m.every(i => board[i] === player));
+}
+
+function checkMill(idx, player) {
+  return MILLS.filter(m => m.includes(idx) && m.every(i => board[i] === player));
+}
+
+function countPieces(player) {
+  return board.filter(v => v === player).length;
+}
+
+function hasAnyMove(player) {
+  const ph = getPhase(player);
+  if (ph === 1) return toPlace[player-1] > 0;
+  if (ph === 3) return board.some(v => v === 0);
+  return board.some((v,i) => v === player && ADJ[i].some(j => board[j] === 0));
+}
+
+// ============================================================
+// CLICK
+// ============================================================
+canvas.addEventListener('click', e => {
+  if (gameOver || aiThinking) return;
+  if (mode === 'ai' && currentPlayer === 2) return;
+
+  const rect = canvas.getBoundingClientRect();
+  const mx = (e.clientX - rect.left) * (canvas.width / rect.width);
+  const my = (e.clientY - rect.top)  * (canvas.height / rect.height);
+
+  let clicked = -1;
+  for (let i = 0; i < 24; i++) {
+    const p = POS[i];
+    const dx = mx - p.x, dy = my - p.y;
+    if (dx*dx + dy*dy <= 18*18) { clicked = i; break; }
+  }
+  if (clicked < 0) return;
+
+  handleClick(clicked);
+});
+
+function handleClick(idx) {
+  const p = currentPlayer;
+  const ph = getPhase(p);
+
+  if (mustCapture) {
+    if (isCaptureable(idx)) {
+      doCapture(idx);
+    }
+    return;
+  }
+
+  if (ph === 1) {
+    // Place phase
+    if (board[idx] !== 0) return;
+    doPlace(idx);
+    return;
+  }
+
+  // Move / fly phase
+  if (selectedPoint < 0) {
+    if (board[idx] === p) {
+      const targets = getValidTargets(idx);
+      if (targets.length > 0) { selectedPoint = idx; draw(); }
+    }
+  } else {
+    if (idx === selectedPoint) { selectedPoint = -1; draw(); return; }
+    const targets = getValidTargets(selectedPoint);
+    if (targets.includes(idx)) {
+      doMove(selectedPoint, idx);
+    } else if (board[idx] === p) {
+      const t2 = getValidTargets(idx);
+      selectedPoint = t2.length > 0 ? idx : -1;
+      draw();
+    } else {
+      selectedPoint = -1; draw();
+    }
+  }
+}
+
+// ============================================================
+// ACTIONS
+// ============================================================
+function saveUndo() {
+  undoStack.push({
+    board: [...board],
+    toPlace: [...toPlace],
+    onBoard: [...onBoard],
+    currentPlayer,
+    mustCapture,
+    selectedPoint,
+    history: [...history],
+    gameOver,
+    lastMill: [...lastMill],
+  });
+}
+
+function doPlace(idx) {
+  saveUndo();
+  board[idx] = currentPlayer;
+  toPlace[currentPlayer-1]--;
+  onBoard[currentPlayer-1]++;
+
+  const mills = checkMill(idx, currentPlayer);
+  if (mills.length > 0) {
+    lastMill = mills[0];
+    history.push({ player: currentPlayer, text: `Placed at ${ptName(idx)} — MILL formed!` });
+    mustCapture = true;
+    updatePips(); updateStatus(); draw(); renderHistory();
+    document.getElementById('undoBtn').disabled = false;
+    return;
+  }
+
+  lastMill = [];
+  history.push({ player: currentPlayer, text: `Placed at ${ptName(idx)}` });
+  endTurn();
+}
+
+function doMove(from, to) {
+  saveUndo();
+  board[to] = board[from];
+  board[from] = 0;
+  selectedPoint = -1;
+
+  const mills = checkMill(to, currentPlayer);
+  if (mills.length > 0) {
+    lastMill = mills[0];
+    history.push({ player: currentPlayer, text: `${ptName(from)} → ${ptName(to)} — MILL!` });
+    mustCapture = true;
+    updatePips(); updateStatus(); draw(); renderHistory();
+    document.getElementById('undoBtn').disabled = false;
+    return;
+  }
+
+  lastMill = [];
+  history.push({ player: currentPlayer, text: `${ptName(from)} → ${ptName(to)}` });
+  endTurn();
+}
+
+function doCapture(idx) {
+  saveUndo();
+  const opp = currentPlayer === 1 ? 2 : 1;
+  board[idx] = 0;
+  onBoard[opp-1]--;
+  mustCapture = false;
+  lastMill = [];
+  history.push({ player: currentPlayer, text: `Captured opponent piece at ${ptName(idx)} ⚔️` });
+  endTurn();
+}
+
+function endTurn() {
+  const opp = currentPlayer === 1 ? 2 : 1;
+
+  // Check win conditions
+  if (onBoard[opp-1] + toPlace[opp-1] <= 2 && toPlace[opp-1] === 0) {
+    doGameOver(currentPlayer, 'Reduced opponent to 2 pieces');
+    return;
+  }
+  if (toPlace[opp-1] === 0 && !hasAnyMove(opp)) {
+    doGameOver(currentPlayer, 'Opponent has no moves');
+    return;
+  }
+
+  currentPlayer = opp;
+  selectedPoint = -1;
+  updatePips(); updateStatus(); updateRollBtn(); draw(); renderHistory();
+
+  if (mode === 'ai' && currentPlayer === 2 && !gameOver) {
+    setTimeout(triggerAI, 500);
+  }
+}
+
+function doGameOver(winner, reason) {
+  gameOver = true;
+  selectedPoint = -1;
+  wins[winner-1]++;
+  document.getElementById(`p${winner}wins`).textContent = wins[winner-1];
+  const name = winner === 1 ? 'Player 1' : (mode === 'ai' ? 'Computer' : 'Player 2');
+  const bar = document.getElementById('statusBar');
+  bar.className = 'status-bar gameover';
+  bar.textContent = `🏆 ${name} wins! ${reason}.`;
+  history.push({ player: winner, text: `Wins — ${reason}` });
+  updatePips(); draw(); renderHistory();
+  document.getElementById('undoBtn').disabled = true;
+}
+
+function ptName(i) {
+  const rings = ['outer','middle','inner'];
+  const positions = ['TL','TM','TR','MR','BR','BM','BL','ML'];
+  return `${rings[Math.floor(i/8)]} ${positions[i%8]}`;
+}
+
+// ============================================================
+// AI
+// ============================================================
+function triggerAI() {
+  if (gameOver) return;
+  aiThinking = true;
+  updateStatus();
+  draw();
+
+  setTimeout(() => {
+    const move = getBestAIMove();
+    aiThinking = false;
+    if (!move) { endTurn(); return; }
+
+    if (move.type === 'place') {
+      handleClick(move.to);
+    } else if (move.type === 'move') {
+      handleClick(move.from);
+      handleClick(move.to);
+    } else if (move.type === 'capture') {
+      handleClick(move.idx);
+    }
+  }, 700);
+}
+
+function getBestAIMove() {
+  const p = 2;
+  const opp = 1;
+  const ph = getPhase(p);
+
+  if (mustCapture) {
+    // Capture: prefer non-mill piece, prefer piece with most mobility
+    const capturable = board.map((v,i) => v === opp && isCaptureable(i) ? i : -1).filter(i => i >= 0);
+    if (!capturable.length) return null;
+    // Prefer to capture piece in a mill-potential (blocking opponent)
+    let best = capturable[0], bestScore = -Infinity;
+    for (const i of capturable) {
+      let score = 0;
+      // Prefer pieces adjacent to many own pieces (breaks opponent connectivity)
+      score += ADJ[i].filter(j => board[j] === opp).length;
+      // Prefer pieces that are part of near-mills
+      MILLS.forEach(m => { if (m.includes(i) && m.filter(j => board[j] === opp).length === 2) score += 5; });
+      if (score > bestScore) { bestScore = score; best = i; }
+    }
+    return { type: 'capture', idx: best };
+  }
+
+  if (ph === 1) {
+    // Placing: score each empty point
+    const empties = board.map((v,i) => v === 0 ? i : -1).filter(i => i >= 0);
+    let best = empties[0], bestScore = -Infinity;
+    for (const i of empties) {
+      let score = scorePlace(i, p);
+      if (score > bestScore) { bestScore = score; best = i; }
+    }
+    return { type: 'place', to: best };
+  }
+
+  // Move / fly
+  const sources = getValidSources();
+  let bestFrom = -1, bestTo = -1, bestScore = -Infinity;
+  for (const from of sources) {
+    const targets = getValidTargets(from);
+    for (const to of targets) {
+      const score = scoreMove(from, to, p);
+      if (score > bestScore) { bestScore = score; bestFrom = from; bestTo = to; }
+    }
+  }
+  if (bestFrom < 0) return null;
+  return { type: 'move', from: bestFrom, to: bestTo };
+}
+
+function scorePlace(idx, player) {
+  const opp = player === 1 ? 2 : 1;
+  let score = 0;
+  // Simulate placement
+  board[idx] = player;
+  // Immediate mill = huge bonus
+  if (checkMill(idx, player).length > 0) score += 100;
+  // Block opponent mill
+  board[idx] = opp;
+  if (checkMill(idx, opp).length > 0) score += 60;
+  board[idx] = 0;
+  board[idx] = player;
+  // Near-mill (2 in a row)
+  MILLS.forEach(m => {
+    if (m.includes(idx)) {
+      const own = m.filter(j => board[j] === player).length;
+      if (own === 2) score += 20;
+      if (own === 1) score += 5;
+    }
+  });
+  // Central points are more valuable
+  const ring = Math.floor(idx/8);
+  score += (2 - ring) * 2;
+  board[idx] = 0;
+  return score;
+}
+
+function scoreMove(from, to, player) {
+  const opp = player === 1 ? 2 : 1;
+  let score = 0;
+  board[from] = 0; board[to] = player;
+  if (checkMill(to, player).length > 0) score += 100;
+  board[to] = opp;
+  if (checkMill(to, opp).length > 0) score += 40; // blocking
+  board[to] = player;
+  // Mobility
+  score += ADJ[to].filter(j => board[j] === 0).length;
+  board[from] = player; board[to] = 0;
+  return score;
+}
+
+// ============================================================
+// UNDO
+// ============================================================
+function undoMove() {
+  if (!undoStack.length) return;
+  const s = undoStack.pop();
+  board = s.board;
+  toPlace = s.toPlace;
+  onBoard = s.onBoard;
+  currentPlayer = s.currentPlayer;
+  mustCapture = s.mustCapture;
+  selectedPoint = -1;
+  history = s.history;
+  gameOver = s.gameOver;
+  lastMill = s.lastMill;
+  aiThinking = false;
+  updatePips(); updateStatus(); updateRollBtn(); draw(); renderHistory();
+  document.getElementById('undoBtn').disabled = undoStack.length === 0;
+}
+
+// ============================================================
+// UI
+// ============================================================
+function updateStatus() {
+  const bar = document.getElementById('statusBar');
+  if (gameOver) return;
+  const name = currentPlayer === 1 ? 'Player 1' : (mode === 'ai' ? 'Computer' : 'Player 2');
+  const ph = getPhase(currentPlayer);
+  const phLabel = ph === 1 ? 'place a piece' : ph === 3 ? 'fly any piece' : 'move a piece';
+
+  if (aiThinking) {
+    bar.className = 'status-bar thinking';
+    bar.textContent = 'Computer is thinking...';
+    return;
+  }
+  if (mustCapture) {
+    bar.className = 'status-bar capture';
+    bar.textContent = `${name} formed a mill — capture an opponent piece!`;
+    return;
+  }
+  bar.className = `status-bar p${currentPlayer}`;
+  bar.textContent = ph === 1
+    ? `${name} — ${phLabel} (${toPlace[currentPlayer-1]} remaining)`
+    : `${name} — ${phLabel}`;
+}
+
+function updateRollBtn() {
+  document.getElementById('undoBtn').disabled = undoStack.length === 0 || gameOver || aiThinking;
+}
+
+function updatePips() {
+  [1,2].forEach(p => {
+    const container = document.getElementById(`p${p}pips`);
+    container.innerHTML = '';
+    const placed = onBoard[p-1];
+    const waiting = toPlace[p-1];
+    const lost = 9 - placed - waiting;
+    for (let i = 0; i < 9; i++) {
+      const pip = document.createElement('div');
+      pip.className = 'pip';
+      if (i < placed) pip.classList.add(`p${p}-active`);
+      else if (i < placed + waiting) pip.classList.add(`p${p}-waiting`);
+      else pip.classList.add(`p${p}-lost`);
+      container.appendChild(pip);
+    }
+    const label = document.getElementById(`p${p}counter-label`);
+    const pname = p === 2 && mode === 'ai' ? 'Computer' : `Player ${p}`;
+    label.textContent = `${pname} · ${placed} on board`;
+  });
+}
+
+function renderHistory() {
+  const list = document.getElementById('historyList');
+  list.innerHTML = '';
+  history.slice().reverse().forEach((entry, i) => {
+    const div = document.createElement('div');
+    div.className = 'history-entry';
+    const num = document.createElement('span');
+    num.className = 'history-num';
+    num.textContent = history.length - i;
+    const pl = document.createElement('span');
+    pl.className = `history-player p${entry.player}`;
+    pl.textContent = entry.player === 1 ? 'P1' : (mode === 'ai' ? 'CPU' : 'P2');
+    const t = document.createElement('span');
+    t.textContent = entry.text;
+    div.appendChild(num); div.appendChild(pl); div.appendChild(t);
+    list.appendChild(div);
+  });
+}
+
+function setMode(m) {
+  mode = m;
+  document.getElementById('btn2p').classList.toggle('active', m === '2p');
+  document.getElementById('btnAI').classList.toggle('active', m === 'ai');
+  const n = m === 'ai' ? 'Computer' : 'Player 2';
+  document.getElementById('p2name').textContent = n;
+  wins = [0,0];
+  document.getElementById('p1wins').textContent = 0;
+  document.getElementById('p2wins').textContent = 0;
+  initGame();
+}
+
+function openRules() { document.getElementById('rulesModal').classList.add('open'); }
+function closeRules() { document.getElementById('rulesModal').classList.remove('open'); }
+document.getElementById('rulesModal').addEventListener('click', e => {
+  if (e.target === document.getElementById('rulesModal')) closeRules();
+});
+
+function resetGame() { initGame(); }
+
+function initGame() {
+  board = Array(24).fill(0);
+  toPlace = [9, 9];
+  onBoard = [0, 0];
+  currentPlayer = 1;
+  gameOver = false;
+  mustCapture = false;
+  selectedPoint = -1;
+  history = [];
+  undoStack = [];
+  aiThinking = false;
+  lastMill = [];
+  updatePips();
+  updateStatus();
+  updateRollBtn();
+  draw();
+  renderHistory();
+}
+
+initGame();
+</script>
+</body>
+</html>
