@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Play The Royal Game of Ur — The Game Keeper</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --ink: #12100c;
+      --parchment: #f2ede0;
+      --gold: #c8a84b;
+      --gold-dim: rgba(200,168,75,0.25);
+      --sienna: #8b3a1c;
+      --muted: #7a7060;
+      --lapis: #1a3a6a;
+      --lapis-light: #2a5aaa;
+      --shell: #e8dfc8;
+      --rosette: #c8a84b;
+      --p1: #c8a84b;
+      --p2: #8b3a1c;
+      --p1light: #f0cc70;
+      --p2light: #c05030;
+      --board-bg: #2a1f0e;
+      --board-border: #5a4020;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--ink);
+      color: var(--parchment);
+      font-family: 'DM Mono', monospace;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem 1rem 4rem;
+      background-image:
+        radial-gradient(ellipse at 25% 15%, rgba(26,58,106,0.12) 0%, transparent 55%),
+        radial-gradient(ellipse at 75% 85%, rgba(200,168,75,0.06) 0%, transparent 55%);
+    }
+
+    .back-link { align-self:flex-start; color:var(--gold); text-decoration:none; font-size:0.75rem; letter-spacing:0.1em; margin-bottom:2rem; opacity:0.7; transition:opacity 0.2s; }
+    .back-link:hover { opacity:1; }
+
+    .game-title { font-family:'Playfair Display',serif; font-size:2.2rem; font-weight:700; margin-bottom:0.2rem; text-align:center; }
+    .game-subtitle { font-size:0.65rem; letter-spacing:0.28em; color:var(--gold); text-transform:uppercase; margin-bottom:1.5rem; text-align:center; }
+
+    /* MODE */
+    .mode-selector { display:flex; gap:0.5rem; margin-bottom:1.5rem; }
+    .mode-btn { background:none; border:1px solid rgba(200,168,75,0.25); color:rgba(242,237,224,0.4); font-family:'DM Mono',monospace; font-size:0.68rem; letter-spacing:0.12em; text-transform:uppercase; padding:0.4rem 1rem; cursor:pointer; transition:all 0.2s; }
+    .mode-btn.active { border-color:var(--gold); color:var(--gold); background:rgba(200,168,75,0.08); }
+    .mode-btn:hover { border-color:var(--gold); color:var(--parchment); }
+
+    /* STATUS */
+    .status-bar { padding:0.65rem 2rem; font-size:0.78rem; letter-spacing:0.08em; margin-bottom:1.5rem; text-align:center; min-width:360px; border:1px solid rgba(200,168,75,0.2); background:rgba(200,168,75,0.04); transition:all 0.3s; }
+    .status-bar.p1 { border-color:rgba(200,168,75,0.6); background:rgba(200,168,75,0.08); }
+    .status-bar.p2 { border-color:rgba(139,58,28,0.6); background:rgba(139,58,28,0.1); }
+    .status-bar.gameover { border-color:var(--gold); background:rgba(200,168,75,0.12); color:var(--gold); }
+    @keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.4} }
+    .status-bar.thinking { border-color:var(--gold); animation:pulse 1s ease infinite; }
+
+    /* SCORE */
+    .score-tracker { display:flex; gap:3rem; margin-bottom:1.5rem; align-items:center; }
+    .score-block { text-align:center; }
+    .score-name { font-size:0.58rem; letter-spacing:0.2em; text-transform:uppercase; color:var(--muted); margin-bottom:0.2rem; }
+    .score-wins { font-family:'Playfair Display',serif; font-size:1.8rem; font-weight:700; color:var(--gold); line-height:1; }
+    .score-divider { font-size:0.65rem; color:rgba(242,237,224,0.15); }
+
+    /* BOARD */
+    .board-area { display:flex; flex-direction:column; align-items:center; gap:1.5rem; margin-bottom:1.5rem; }
+
+    .board-container {
+      background: linear-gradient(135deg, #3a2810, #2a1f0e, #3a2810);
+      border: 3px solid var(--board-border);
+      border-radius: 8px;
+      padding: 16px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.06);
+      position: relative;
+    }
+
+    .board-grid {
+      display: grid;
+      grid-template-columns: repeat(8, 56px);
+      grid-template-rows: repeat(3, 56px);
+      gap: 4px;
+    }
+
+    .sq {
+      width: 56px;
+      height: 56px;
+      border-radius: 4px;
+      background: #1e1508;
+      border: 1px solid rgba(90,64,32,0.4);
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: default;
+      transition: all 0.15s;
+    }
+
+    .sq.active-square { background: #1e1508; } /* shown on board */
+    .sq.inactive { background: transparent; border-color: transparent; pointer-events: none; }
+
+    .sq.rosette {
+      background: #1e1508;
+      border-color: rgba(200,168,75,0.5);
+    }
+    .sq.rosette::before {
+      content: '✿';
+      position: absolute;
+      font-size: 20px;
+      color: rgba(200,168,75,0.25);
+      pointer-events: none;
+    }
+
+    .sq.valid-move {
+      cursor: pointer;
+      border-color: rgba(200,168,75,0.8);
+      background: rgba(200,168,75,0.1);
+      box-shadow: 0 0 10px rgba(200,168,75,0.3);
+    }
+    .sq.valid-move:hover {
+      background: rgba(200,168,75,0.2);
+      box-shadow: 0 0 18px rgba(200,168,75,0.5);
+    }
+
+    /* Pieces */
+    .piece {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      position: absolute;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.6rem;
+      font-weight: 500;
+      letter-spacing: 0.05em;
+      cursor: default;
+      transition: transform 0.2s;
+      z-index: 2;
+      box-shadow: 0 3px 8px rgba(0,0,0,0.5);
+    }
+    .piece.p1 {
+      background: radial-gradient(circle at 35% 35%, var(--p1light), var(--p1), #7a5018);
+      color: #3a2008;
+      border: 2px solid rgba(255,255,255,0.2);
+    }
+    .piece.p2 {
+      background: radial-gradient(circle at 35% 35%, var(--p2light), var(--p2), #4a1008);
+      color: #f2ede0;
+      border: 2px solid rgba(255,255,255,0.15);
+    }
+    .piece.selected {
+      transform: scale(1.15);
+      box-shadow: 0 0 0 3px rgba(200,168,75,0.8), 0 3px 8px rgba(0,0,0,0.5);
+    }
+
+    /* Off-board piece tracks */
+    .tracks {
+      display: flex;
+      justify-content: space-between;
+      width: 100%;
+      max-width: 520px;
+      margin-bottom: 0.5rem;
+    }
+    .track {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+    .track-label { font-size: 0.58rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.2rem; }
+    .track-pieces { display: flex; gap: 0.35rem; flex-wrap: wrap; max-width: 180px; }
+    .mini-piece {
+      width: 18px; height: 18px; border-radius: 50%;
+      display: inline-block;
+    }
+    .mini-piece.p1-waiting { background: rgba(200,168,75,0.25); border: 1px solid rgba(200,168,75,0.4); }
+    .mini-piece.p1-scored  { background: var(--p1); border: 1px solid rgba(255,255,255,0.2); }
+    .mini-piece.p2-waiting { background: rgba(139,58,28,0.25); border: 1px solid rgba(139,58,28,0.4); }
+    .mini-piece.p2-scored  { background: var(--p2); border: 1px solid rgba(255,255,255,0.15); }
+
+    /* DICE */
+    .dice-area { display:flex; flex-direction:column; align-items:center; gap:0.9rem; }
+    .dice-row { display:flex; gap:0.75rem; }
+
+    .die {
+      width: 40px; height: 40px;
+      background: radial-gradient(ellipse at 35% 35%, #4a3820, #1e1508);
+      border: 1.5px solid rgba(200,168,75,0.2);
+      border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px;
+      position: relative;
+      transition: transform 0.1s;
+    }
+    .die.marked {
+      background: radial-gradient(ellipse at 35% 35%, #5a4828, #2a1e0a);
+      border-color: rgba(200,168,75,0.6);
+    }
+    .die.marked::after {
+      content: '◆';
+      color: var(--gold);
+      font-size: 14px;
+    }
+    .die:not(.marked)::after {
+      content: '◇';
+      color: rgba(200,168,75,0.2);
+      font-size: 14px;
+    }
+    @keyframes dieRoll { 0%{transform:rotate(0)scale(1)}25%{transform:rotate(90deg)scale(0.85)}50%{transform:rotate(180deg)scale(1.1)}75%{transform:rotate(270deg)scale(0.9)}100%{transform:rotate(360deg)scale(1)} }
+    .die.rolling { animation: dieRoll 0.45s ease; }
+
+    .roll-result { font-family:'Playfair Display',serif; font-size:1.1rem; color:var(--gold); letter-spacing:0.05em; min-height:1.5rem; text-align:center; }
+
+    .roll-btn { background:none; border:1px solid rgba(200,168,75,0.5); color:var(--parchment); font-family:'DM Mono',monospace; font-size:0.75rem; letter-spacing:0.15em; text-transform:uppercase; padding:0.6rem 2rem; cursor:pointer; transition:all 0.2s; }
+    .roll-btn:hover:not(:disabled) { border-color:var(--gold); background:rgba(200,168,75,0.08); }
+    .roll-btn:disabled { opacity:0.3; cursor:default; }
+
+    /* CONTROLS */
+    .controls { display:flex; gap:0.75rem; flex-wrap:wrap; justify-content:center; margin-bottom:2rem; }
+    .ctrl-btn { background:none; border:1px solid rgba(200,168,75,0.25); color:rgba(242,237,224,0.6); font-family:'DM Mono',monospace; font-size:0.68rem; letter-spacing:0.1em; text-transform:uppercase; padding:0.45rem 1.1rem; cursor:pointer; transition:all 0.2s; }
+    .ctrl-btn:hover:not(:disabled) { border-color:var(--gold); color:var(--parchment); background:rgba(200,168,75,0.06); }
+    .ctrl-btn:disabled { opacity:0.25; cursor:default; }
+
+    /* HISTORY */
+    .history-panel { width:100%; max-width:500px; border-top:1px solid rgba(200,168,75,0.1); padding-top:1.5rem; }
+    .history-title { font-size:0.58rem; letter-spacing:0.25em; text-transform:uppercase; color:var(--muted); margin-bottom:1rem; }
+    .history-list { display:flex; flex-direction:column; gap:0.3rem; max-height:160px; overflow-y:auto; }
+    .history-list::-webkit-scrollbar { width:3px; }
+    .history-list::-webkit-scrollbar-thumb { background:rgba(200,168,75,0.15); }
+    @keyframes slideIn { from{opacity:0;transform:translateX(-6px)}to{opacity:1;transform:none} }
+    .history-entry { display:flex; align-items:center; gap:0.6rem; font-size:0.68rem; color:rgba(242,237,224,0.45); padding:0.25rem 0; border-bottom:1px solid rgba(200,168,75,0.05); animation:slideIn 0.2s ease; }
+    .history-num { color:rgba(200,168,75,0.25); min-width:1.5rem; text-align:right; font-size:0.58rem; }
+    .history-player { font-size:0.58rem; padding:0.12rem 0.35rem; }
+    .history-player.p1 { background:rgba(200,168,75,0.15); color:var(--gold); }
+    .history-player.p2 { background:rgba(139,58,28,0.2); color:var(--p2light); }
+
+    /* MODAL */
+    .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:200; align-items:center; justify-content:center; padding:2rem; }
+    .modal-overlay.open { display:flex; }
+    @keyframes modalIn { from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none} }
+    .modal { background:#140f08; border:1px solid rgba(200,168,75,0.25); max-width:500px; width:100%; padding:2.5rem; position:relative; animation:modalIn 0.3s ease; }
+    .modal-close { position:absolute; top:1rem; right:1rem; background:none; border:none; color:var(--muted); font-size:1.1rem; cursor:pointer; transition:color 0.2s; }
+    .modal-close:hover { color:var(--parchment); }
+    .modal h2 { font-family:'Playfair Display',serif; font-size:1.5rem; margin-bottom:0.25rem; }
+    .modal .sub { font-size:0.62rem; letter-spacing:0.18em; text-transform:uppercase; color:var(--gold); margin-bottom:1.5rem; }
+    .rules-list { list-style:none; counter-reset:rules; }
+    .rules-list li { counter-increment:rules; padding:0.45rem 0 0.45rem 2rem; position:relative; border-bottom:1px solid rgba(200,168,75,0.07); font-size:0.8rem; line-height:1.65; color:rgba(242,237,224,0.72); }
+    .rules-list li:last-child { border-bottom:none; }
+    .rules-list li::before { content:counter(rules); position:absolute; left:0; font-size:0.62rem; color:var(--gold); top:0.6rem; }
+    .rules-list strong { color:var(--parchment); }
+  </style>
+</head>
+<body>
+
+  <a href="../games/ur.html" class="back-link">← Back to The Royal Game of Ur</a>
+  <h1 class="game-title">The Royal Game of Ur</h1>
+  <p class="game-subtitle">Mesopotamia · ~2600 BC</p>
+
+  <div class="mode-selector">
+    <button class="mode-btn active" id="btn2p" onclick="setMode('2p')">2 Players</button>
+    <button class="mode-btn" id="btnAI" onclick="setMode('ai')">vs Computer</button>
+  </div>
+
+  <div class="status-bar p1" id="statusBar">Player 1's turn — roll the dice</div>
+
+  <div class="score-tracker">
+    <div class="score-block">
+      <div class="score-name">Player 1</div>
+      <div class="score-wins" id="p1wins">0</div>
+    </div>
+    <div class="score-divider">wins</div>
+    <div class="score-block">
+      <div class="score-name" id="p2name">Player 2</div>
+      <div class="score-wins" id="p2wins">0</div>
+    </div>
+  </div>
+
+  <!-- Piece tracks -->
+  <div class="tracks">
+    <div class="track">
+      <div class="track-label" id="p1track-label">Player 1</div>
+      <div class="track-pieces" id="p1-track"></div>
+    </div>
+    <div class="track" style="align-items:flex-end">
+      <div class="track-label" id="p2track-label">Player 2</div>
+      <div class="track-pieces" id="p2-track"></div>
+    </div>
+  </div>
+
+  <div class="board-area">
+    <div class="board-container">
+      <div class="board-grid" id="boardGrid"></div>
+    </div>
+
+    <div class="dice-area">
+      <div class="dice-row" id="diceRow">
+        <div class="die" id="d0"></div>
+        <div class="die" id="d1"></div>
+        <div class="die" id="d2"></div>
+        <div class="die" id="d3"></div>
+      </div>
+      <div class="roll-result" id="rollResult">Cast the tetrahedral dice to begin</div>
+      <button class="roll-btn" id="rollBtn" onclick="rollDice()">⬡ Roll Dice</button>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button class="ctrl-btn" onclick="resetGame()">↺ New Game</button>
+    <button class="ctrl-btn" id="undoBtn" onclick="undoMove()" disabled>↩ Undo</button>
+    <button class="ctrl-btn" onclick="openRules()">? Rules</button>
+  </div>
+
+  <div class="history-panel">
+    <div class="history-title">Move History</div>
+    <div class="history-list" id="historyList"></div>
+  </div>
+
+  <div class="modal-overlay" id="rulesModal">
+    <div class="modal">
+      <button class="modal-close" onclick="closeRules()">✕</button>
+      <h2>How to Play</h2>
+      <p class="sub">The Royal Game of Ur · ~2600 BC</p>
+      <ol class="rules-list">
+        <li>Each player has <strong>7 pieces</strong> starting off the board. Roll 4 dice — each die scores 0 or 1. Your roll total (0–4) is how many squares to move.</li>
+        <li>Enter a piece onto your first square by using a roll. Move any one piece forward by the roll amount each turn.</li>
+        <li>Both players share the <strong>middle row</strong> (squares 5–12 of the path). You cannot land on your own pieces.</li>
+        <li><strong>Capture:</strong> Landing on an opponent's piece in the shared section sends it back off the board.</li>
+        <li><strong>Rosette squares</strong> (✿) are safe — pieces here cannot be captured. Landing on a rosette also grants a <strong>free extra roll</strong>!</li>
+        <li>To bear a piece off, you must roll the exact number needed to exit. A roll of 0 forfeits your turn.</li>
+        <li>First player to bear all <strong>7 pieces</strong> off the board wins!</li>
+      </ol>
+    </div>
+  </div>
+
+<script>
+// ============================================================
+// BOARD DEFINITION
+//
+// The Ur board is 20 squares arranged as:
+//   Top row (P1 private):    cols 0-3    (4 squares, right to left entry)
+//   Middle row (shared):     cols 0-7    (8 squares, left to right)
+//   Bottom row (P2 private): cols 0-3    (4 squares, right to left entry)
+//
+// Path for P1 (14 steps total, exit on step 14):
+//   Entry: top row right-to-left (cols 3,2,1,0), then middle row left-to-right (cols 0-7), then bottom-of-top row... 
+//   Actually using the standard Finkel reconstruction:
+//   P1 path: top[3],top[2],top[1],top[0], mid[0],mid[1],mid[2],mid[3],mid[4],mid[5],mid[6],mid[7], bot[0],bot[1] → exit
+//   P2 path: bot[3],bot[2],bot[1],bot[0], mid[0],mid[1],...,mid[7], top[0],top[1] → exit
+//
+// Grid layout (row, col):
+//   Row 0 = top, Row 1 = middle, Row 2 = bottom
+//   Active squares:
+//     Top:    (0,0),(0,1),(0,2),(0,3)           — cols 4-7 inactive
+//     Middle: (1,0),(1,1),(1,2),(1,3),(1,4),(1,5),(1,6),(1,7)
+//     Bottom: (2,0),(2,1),(2,2),(2,3)           — cols 4-7 inactive
+// ============================================================
+
+// Square IDs as [row, col]
+const GRID = {
+  // top row: only cols 0-3 active
+  't0':[0,0],'t1':[0,1],'t2':[0,2],'t3':[0,3],
+  // middle row: all 8 cols
+  'm0':[1,0],'m1':[1,1],'m2':[1,2],'m3':[1,3],'m4':[1,4],'m5':[1,5],'m6':[1,6],'m7':[1,7],
+  // bottom row: only cols 0-3 active
+  'b0':[2,0],'b1':[2,1],'b2':[2,2],'b3':[2,3],
+};
+
+// P1 path: enter from top-right, go left, then shared middle L→R, then bottom-right exit
+const P1_PATH = ['t3','t2','t1','t0','m0','m1','m2','m3','m4','m5','m6','m7','b3','b2'];
+// P2 path: enter from bottom-right, go left, then shared middle L→R, then top-right exit  
+const P2_PATH = ['b3','b2','b1','b0','m0','m1','m2','m3','m4','m5','m6','m7','t3','t2'];
+
+// Shared squares (both players occupy same physical square — captures possible)
+const SHARED = new Set(['m0','m1','m2','m3','m4','m5','m6','m7']);
+
+// Rosette squares (safe + extra turn)
+const ROSETTES = new Set(['t3','m3','b3','t0','b0']);
+// Note: using the common reconstruction: rosettes at path positions 4 (t3 equivalent), 
+// middle-path pos 4 (m3), and the bridge squares. Let's use the well-known 5 rosettes:
+// top-row rightmost (entry), middle col 3, bottom-row rightmost (entry), top col 0, bottom col 0
+
+// ============================================================
+// STATE
+// ============================================================
+let mode = '2p';
+let currentPlayer = 1;
+let gameOver = false;
+let rolled = false;
+let rollValue = 0;
+let wins = [0, 0];
+let history = [];
+let undoStack = [];
+let aiThinking = false;
+let selectedPiece = -1; // index in player's pieces array (-1 = none)
+
+// pieces[p][i] = progress along their path:
+//   -1 = waiting off board
+//   0..13 = on board at PATH[progress]
+//   14 = scored (off board, exited)
+let pieces = { 1: Array(7).fill(-1), 2: Array(7).fill(-1) };
+
+// ============================================================
+// BOARD RENDERING
+// ============================================================
+function buildBoardHTML() {
+  const grid = document.getElementById('boardGrid');
+  grid.innerHTML = '';
+
+  // Build 3×8 grid
+  for (let r = 0; r < 3; r++) {
+    for (let c = 0; c < 8; c++) {
+      const div = document.createElement('div');
+      const sqId = getSqId(r, c);
+      if (sqId) {
+        div.className = 'sq active-square';
+        if (ROSETTES.has(sqId)) div.classList.add('rosette');
+        div.dataset.sqid = sqId;
+        div.addEventListener('click', () => handleSquareClick(sqId));
+      } else {
+        div.className = 'sq inactive';
+      }
+      grid.appendChild(div);
+    }
+  }
+}
+
+function getSqId(row, col) {
+  if (row === 0 && col <= 3) return `t${col}`;
+  if (row === 1) return `m${col}`;
+  if (row === 2 && col <= 3) return `b${col}`;
+  return null;
+}
+
+function renderBoard() {
+  // Clear all pieces from squares
+  document.querySelectorAll('.sq').forEach(sq => {
+    sq.classList.remove('valid-move');
+    const existing = sq.querySelectorAll('.piece');
+    existing.forEach(p => p.remove());
+  });
+
+  // Place pieces on board
+  [1, 2].forEach(p => {
+    const path = p === 1 ? P1_PATH : P2_PATH;
+    pieces[p].forEach((prog, idx) => {
+      if (prog < 0 || prog >= path.length) return;
+      const sqId = path[prog];
+      const sq = document.querySelector(`[data-sqid="${sqId}"]`);
+      if (!sq) return;
+      const pieceEl = document.createElement('div');
+      pieceEl.className = `piece p${p}`;
+      pieceEl.textContent = idx + 1;
+      if (p === currentPlayer && idx === selectedPiece) pieceEl.classList.add('selected');
+      pieceEl.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (p === currentPlayer && rolled && !gameOver && !aiThinking) {
+          if (!(mode === 'ai' && currentPlayer === 2)) {
+            selectedPiece = idx;
+            renderBoard();
+          }
+        }
+      });
+      sq.appendChild(pieceEl);
+    });
+  });
+
+  // Highlight valid moves
+  if (rolled && !gameOver && !aiThinking && !(mode === 'ai' && currentPlayer === 2)) {
+    const moves = getValidMoves(currentPlayer, rollValue);
+    moves.forEach(mv => {
+      if (mv.type === 'exit') return;
+      const sqId = mv.toSq;
+      const sq = document.querySelector(`[data-sqid="${sqId}"]`);
+      if (sq) sq.classList.add('valid-move');
+    });
+  }
+
+  renderTracks();
+  document.getElementById('undoBtn').disabled = undoStack.length === 0 || gameOver || aiThinking;
+}
+
+function renderTracks() {
+  [1, 2].forEach(p => {
+    const track = document.getElementById(`p${p}-track`);
+    track.innerHTML = '';
+    const waiting = pieces[p].filter(x => x === -1).length;
+    const scored  = pieces[p].filter(x => x >= 14).length;
+    for (let i = 0; i < 7; i++) {
+      const dot = document.createElement('div');
+      dot.className = `mini-piece ${i < scored ? `p${p}-scored` : `p${p}-waiting`}`;
+      track.appendChild(dot);
+    }
+  });
+}
+
+// ============================================================
+// GAME LOGIC
+// ============================================================
+function getPath(player) { return player === 1 ? P1_PATH : P2_PATH; }
+
+function getValidMoves(player, roll) {
+  if (roll === 0) return [];
+  const path = getPath(player);
+  const opp = player === 1 ? 2 : 1;
+  const oppPath = getPath(opp);
+  const moves = [];
+
+  pieces[player].forEach((prog, idx) => {
+    if (prog >= 14) return; // already scored
+
+    const newProg = prog + roll;
+
+    if (prog === -1) {
+      // Entering: newProg must be 0..13 from -1, so roll maps to newProg = roll - 1
+      const enterProg = roll - 1;
+      if (enterProg < 0 || enterProg >= path.length) return;
+      const toSq = path[enterProg];
+      // Can't land on own piece
+      const ownOnSq = pieces[player].some((x, i) => i !== idx && x === enterProg);
+      if (ownOnSq) return;
+      moves.push({ type: 'enter', pieceIdx: idx, fromProg: -1, toProg: enterProg, toSq });
+      return;
+    }
+
+    if (newProg === path.length) {
+      // Exact exit
+      moves.push({ type: 'exit', pieceIdx: idx, fromProg: prog, toProg: 14, toSq: null });
+      return;
+    }
+    if (newProg > path.length) return; // overshoot
+
+    const toSq = path[newProg];
+    // Can't land on own piece
+    const ownOnSq = pieces[player].some((x, i) => i !== idx && x === newProg);
+    if (ownOnSq) return;
+    // Can't capture on rosette
+    if (SHARED.has(toSq) && ROSETTES.has(toSq)) {
+      const oppOnSq = pieces[opp].some(x => x >= 0 && x < oppPath.length && oppPath[x] === toSq);
+      if (oppOnSq) return; // can't land on safe rosette occupied by opponent
+    }
+    moves.push({ type: 'move', pieceIdx: idx, fromProg: prog, toProg: newProg, toSq });
+  });
+
+  return moves;
+}
+
+function rollDice() {
+  if (rolled || gameOver || aiThinking) return;
+
+  const dice = [0,1,2,3].map(i => document.getElementById(`d${i}`));
+  dice.forEach(d => { d.classList.remove('rolling', 'marked'); void d.offsetWidth; d.classList.add('rolling'); });
+
+  setTimeout(() => {
+    const results = [0,1,2,3].map(() => Math.random() < 0.5 ? 1 : 0);
+    rollValue = results.reduce((a,b) => a+b, 0);
+
+    results.forEach((r, i) => {
+      const d = document.getElementById(`d${i}`);
+      d.classList.toggle('marked', r === 1);
+    });
+
+    rolled = true;
+    const label = rollValue === 0 ? '0 — no move' : rollValue === 4 ? '4 — maximum!' : `${rollValue}`;
+    document.getElementById('rollResult').textContent = `Rolled: ${label}`;
+
+    const moves = getValidMoves(currentPlayer, rollValue);
+
+    if (rollValue === 0 || moves.length === 0) {
+      const pName = currentPlayer === 1 ? 'Player 1' : (mode === 'ai' ? 'Computer' : 'Player 2');
+      history.push({ player: currentPlayer, text: `Rolled ${rollValue} — no moves, turn passes` });
+      renderHistory();
+      setTimeout(() => {
+        rolled = false; rollValue = 0; selectedPiece = -1;
+        currentPlayer = currentPlayer === 1 ? 2 : 1;
+        updateStatus(); updateRollBtn(); renderBoard();
+        if (mode === 'ai' && currentPlayer === 2 && !gameOver) triggerAI();
+      }, 800);
+      return;
+    }
+
+    // If only one move and it's unambiguous, auto-execute after brief pause
+    if (moves.length === 1) {
+      setTimeout(() => executeMove(moves[0]), 400);
+      return;
+    }
+
+    updateRollBtn();
+    renderBoard();
+  }, 480);
+}
+
+function handleSquareClick(sqId) {
+  if (!rolled || gameOver || aiThinking) return;
+  if (mode === 'ai' && currentPlayer === 2) return;
+
+  const moves = getValidMoves(currentPlayer, rollValue);
+  const path = getPath(currentPlayer);
+
+  // Find move targeting this square
+  for (const mv of moves) {
+    if (mv.toSq === sqId) {
+      // If a piece is selected, prefer that piece
+      if (selectedPiece >= 0 && mv.pieceIdx === selectedPiece) {
+        executeMove(mv); return;
+      }
+      // Otherwise take first matching
+      if (selectedPiece < 0) {
+        executeMove(mv); return;
+      }
+    }
+  }
+}
+
+function executeMove(mv) {
+  if (!rolled) return;
+
+  if (!(mode === 'ai' && currentPlayer === 2)) {
+    undoStack.push({
+      pieces: { 1: [...pieces[1]], 2: [...pieces[2]] },
+      currentPlayer, history: [...history], rolled, rollValue, selectedPiece
+    });
+  }
+
+  const player = currentPlayer;
+  const opp = player === 1 ? 2 : 1;
+  const path = getPath(player);
+  const oppPath = getPath(opp);
+  let histText = '';
+  let captured = false;
+  let rosetteLanding = false;
+
+  if (mv.type === 'exit') {
+    pieces[player][mv.pieceIdx] = 14;
+    histText = `Rolled ${rollValue} — piece exits! 🏺`;
+  } else {
+    const toSq = mv.toSq;
+    // Check capture
+    if (SHARED.has(toSq)) {
+      pieces[opp].forEach((oppProg, oppIdx) => {
+        if (oppProg < 0 || oppProg >= oppPath.length) return;
+        if (oppPath[oppProg] === toSq) {
+          pieces[opp][oppIdx] = -1;
+          captured = true;
+        }
+      });
+    }
+    pieces[player][mv.pieceIdx] = mv.toProg;
+    rosetteLanding = ROSETTES.has(toSq);
+    histText = captured
+      ? `Rolled ${rollValue} — captured! ⚔️`
+      : rosetteLanding
+        ? `Rolled ${rollValue} — rosette! Extra turn ✿`
+        : `Rolled ${rollValue} — moved forward`;
+  }
+
+  history.push({ player, text: histText });
+
+  // Check win
+  if (pieces[player].every(p => p >= 14)) {
+    gameOver = true;
+    rolled = false; selectedPiece = -1;
+    renderBoard(); renderHistory(); showResult(player);
+    return;
+  }
+
+  rolled = false; rollValue = 0; selectedPiece = -1;
+
+  // Rosette = extra turn (same player)
+  if (!rosetteLanding || mv.type === 'exit') {
+    if (!rosetteLanding) currentPlayer = opp;
+  }
+  // if rosetteLanding, currentPlayer stays the same
+
+  updateStatus(); updateRollBtn(); renderBoard(); renderHistory();
+
+  if (mode === 'ai' && currentPlayer === 2 && !gameOver) triggerAI();
+}
+
+// ============================================================
+// AI
+// ============================================================
+function triggerAI() {
+  aiThinking = true;
+  const bar = document.getElementById('statusBar');
+  bar.className = 'status-bar thinking';
+  bar.textContent = 'Computer is thinking...';
+  renderBoard();
+
+  setTimeout(() => {
+    // AI rolls
+    const results = [0,1,2,3].map(() => Math.random() < 0.5 ? 1 : 0);
+    rollValue = results.reduce((a,b) => a+b, 0);
+    results.forEach((r, i) => document.getElementById(`d${i}`).classList.toggle('marked', r === 1));
+    rolled = true;
+    document.getElementById('rollResult').textContent = `Computer rolled: ${rollValue}`;
+
+    setTimeout(() => {
+      const moves = getValidMoves(2, rollValue);
+      if (rollValue === 0 || moves.length === 0) {
+        history.push({ player: 2, text: `Rolled ${rollValue} — no moves, turn passes` });
+        renderHistory();
+        rolled = false; rollValue = 0; aiThinking = false;
+        currentPlayer = 1;
+        updateStatus(); updateRollBtn(); renderBoard();
+        return;
+      }
+
+      // AI strategy: score exit > capture > rosette > advance furthest
+      let best = moves[0], bestScore = -Infinity;
+      for (const mv of moves) {
+        let score = mv.toProg; // prefer advancing
+        if (mv.type === 'exit') score = 1000;
+        else if (mv.toSq && ROSETTES.has(mv.toSq)) score += 50;
+        else {
+          // Check if captures
+          const oppPath = getPath(1);
+          const captures = pieces[1].some(p => p >= 0 && p < oppPath.length && oppPath[p] === mv.toSq);
+          if (captures) score += 80;
+        }
+        if (score > bestScore) { bestScore = score; best = mv; }
+      }
+
+      aiThinking = false;
+      executeMove(best);
+    }, 600);
+  }, 700);
+}
+
+// ============================================================
+// UNDO
+// ============================================================
+function undoMove() {
+  if (!undoStack.length) return;
+  const s = undoStack.pop();
+  pieces = { 1: [...s.pieces[1]], 2: [...s.pieces[2]] };
+  currentPlayer = s.currentPlayer;
+  history = s.history;
+  rolled = false; rollValue = 0; selectedPiece = -1;
+  gameOver = false; aiThinking = false;
+  updateStatus(); updateRollBtn(); renderBoard(); renderHistory();
+  document.getElementById('rollResult').textContent = 'Cast the tetrahedral dice to begin';
+  [0,1,2,3].forEach(i => document.getElementById(`d${i}`).classList.remove('marked'));
+}
+
+// ============================================================
+// UI
+// ============================================================
+function updateStatus() {
+  const bar = document.getElementById('statusBar');
+  const name = currentPlayer === 1 ? 'Player 1' : (mode === 'ai' ? 'Computer' : 'Player 2');
+  bar.textContent = rolled ? `${name} — click a piece or highlighted square` : `${name}'s turn — roll the dice`;
+  bar.className = `status-bar p${currentPlayer}`;
+}
+
+function updateRollBtn() {
+  document.getElementById('rollBtn').disabled = rolled || gameOver || aiThinking || (mode === 'ai' && currentPlayer === 2);
+}
+
+function showResult(winner) {
+  const bar = document.getElementById('statusBar');
+  const name = winner === 1 ? 'Player 1' : (mode === 'ai' ? 'Computer' : 'Player 2');
+  bar.textContent = `🏆 ${name} wins! All 7 pieces home.`;
+  bar.className = 'status-bar gameover';
+  if (winner === 1) wins[0]++; else wins[1]++;
+  document.getElementById('p1wins').textContent = wins[0];
+  document.getElementById('p2wins').textContent = wins[1];
+  document.getElementById('rollBtn').disabled = true;
+}
+
+function renderHistory() {
+  const list = document.getElementById('historyList');
+  list.innerHTML = '';
+  history.slice().reverse().forEach((entry, i) => {
+    const div = document.createElement('div');
+    div.className = 'history-entry';
+    const num = document.createElement('span');
+    num.className = 'history-num';
+    num.textContent = history.length - i;
+    const p = document.createElement('span');
+    p.className = `history-player p${entry.player}`;
+    p.textContent = entry.player === 1 ? 'P1' : (mode === 'ai' ? 'CPU' : 'P2');
+    const t = document.createElement('span');
+    t.textContent = entry.text;
+    div.appendChild(num); div.appendChild(p); div.appendChild(t);
+    list.appendChild(div);
+  });
+}
+
+function setMode(m) {
+  mode = m;
+  document.getElementById('btn2p').classList.toggle('active', m === '2p');
+  document.getElementById('btnAI').classList.toggle('active', m === 'ai');
+  const n = m === 'ai' ? 'Computer' : 'Player 2';
+  document.getElementById('p2name').textContent = n;
+  document.getElementById('p2track-label').textContent = n;
+  wins = [0, 0];
+  document.getElementById('p1wins').textContent = 0;
+  document.getElementById('p2wins').textContent = 0;
+  initGame();
+}
+
+function openRules() { document.getElementById('rulesModal').classList.add('open'); }
+function closeRules() { document.getElementById('rulesModal').classList.remove('open'); }
+document.getElementById('rulesModal').addEventListener('click', e => {
+  if (e.target === document.getElementById('rulesModal')) closeRules();
+});
+
+function resetGame() { initGame(); }
+
+function initGame() {
+  pieces = { 1: Array(7).fill(-1), 2: Array(7).fill(-1) };
+  currentPlayer = 1;
+  gameOver = false;
+  rolled = false; rollValue = 0; selectedPiece = -1;
+  history = []; undoStack = [];
+  aiThinking = false;
+  [0,1,2,3].forEach(i => document.getElementById(`d${i}`).classList.remove('marked'));
+  document.getElementById('rollResult').textContent = 'Cast the tetrahedral dice to begin';
+  document.getElementById('rollBtn').disabled = false;
+  document.getElementById('undoBtn').disabled = true;
+  buildBoardHTML();
+  renderBoard();
+  renderHistory();
+  updateStatus();
+  updateRollBtn();
+}
+
+initGame();
+</script>
+</body>
+</html>
