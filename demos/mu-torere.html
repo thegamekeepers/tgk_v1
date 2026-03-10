@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Play Mū Tōrere — The Game Keeper</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --ink: #0d1a0f;
+      --parchment: #f0ede4;
+      --gold: #c4972a;
+      --muted: #7a8a72;
+      --p1: #c4972a;
+      --p2: #7a2a1c;
+      --p1light: #e8c060;
+      --p2light: #c05030;
+      --kewai: #1a2e1c;
+      --kewai-border: #2d5230;
+      --putahi: #0f1f10;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--ink);
+      color: var(--parchment);
+      font-family: 'DM Mono', monospace;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem 1rem 4rem;
+      background-image:
+        radial-gradient(ellipse at 30% 10%, rgba(45,82,48,0.15) 0%, transparent 50%),
+        radial-gradient(ellipse at 70% 90%, rgba(196,151,42,0.05) 0%, transparent 50%);
+    }
+
+    .back-link {
+      align-self: flex-start;
+      color: var(--gold);
+      text-decoration: none;
+      font-size: 0.75rem;
+      letter-spacing: 0.1em;
+      margin-bottom: 2rem;
+      opacity: 0.7;
+      transition: opacity 0.2s;
+    }
+    .back-link:hover { opacity: 1; }
+
+    .game-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 2.4rem;
+      font-weight: 700;
+      margin-bottom: 0.2rem;
+      text-align: center;
+    }
+    .game-subtitle {
+      font-size: 0.65rem;
+      letter-spacing: 0.28em;
+      color: var(--gold);
+      text-transform: uppercase;
+      margin-bottom: 1.5rem;
+      text-align: center;
+    }
+
+    /* MODE */
+    .mode-selector { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; }
+    .mode-btn {
+      background: none;
+      border: 1px solid rgba(196,151,42,0.25);
+      color: rgba(240,237,228,0.4);
+      font-family: 'DM Mono', monospace;
+      font-size: 0.68rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      padding: 0.4rem 1rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .mode-btn.active { border-color: var(--gold); color: var(--gold); background: rgba(196,151,42,0.08); }
+    .mode-btn:hover { border-color: var(--gold); color: var(--parchment); }
+
+    /* STATUS */
+    .status-bar {
+      padding: 0.65rem 2rem;
+      font-size: 0.78rem;
+      letter-spacing: 0.08em;
+      margin-bottom: 1.5rem;
+      text-align: center;
+      min-width: 340px;
+      border: 1px solid rgba(196,151,42,0.2);
+      background: rgba(196,151,42,0.04);
+      transition: all 0.3s;
+    }
+    .status-bar.p1 { border-color: rgba(196,151,42,0.6); background: rgba(196,151,42,0.08); }
+    .status-bar.p2 { border-color: rgba(122,42,28,0.7); background: rgba(122,42,28,0.1); }
+    .status-bar.gameover { border-color: var(--gold); background: rgba(196,151,42,0.12); color: var(--gold); }
+    @keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.4} }
+    .status-bar.thinking { border-color: var(--gold); animation: pulse 1s ease infinite; }
+
+    /* SCORE */
+    .score-tracker { display: flex; gap: 3rem; margin-bottom: 1.5rem; align-items: center; }
+    .score-block { text-align: center; }
+    .score-name { font-size: 0.58rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.2rem; }
+    .score-wins { font-family: 'Playfair Display', serif; font-size: 1.8rem; font-weight: 700; color: var(--gold); line-height: 1; }
+    .score-divider { font-size: 0.65rem; color: rgba(240,237,228,0.15); }
+
+    /* BOARD */
+    .board-wrap {
+      position: relative;
+      margin-bottom: 1.5rem;
+    }
+    #boardCanvas {
+      display: block;
+      cursor: default;
+    }
+
+    /* PIECE LEGEND */
+    .piece-legend {
+      display: flex;
+      gap: 2rem;
+      font-size: 0.63rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 1rem;
+      justify-content: center;
+    }
+    .legend-item { display: flex; align-items: center; gap: 0.5rem; }
+    .legend-dot { width: 12px; height: 12px; border-radius: 50%; }
+    .legend-dot.p1 { background: var(--p1); }
+    .legend-dot.p2 { background: var(--p2); }
+
+    /* CONTROLS */
+    .controls { display: flex; gap: 0.75rem; flex-wrap: wrap; justify-content: center; margin-bottom: 2rem; }
+    .ctrl-btn {
+      background: none;
+      border: 1px solid rgba(196,151,42,0.25);
+      color: rgba(240,237,228,0.6);
+      font-family: 'DM Mono', monospace;
+      font-size: 0.68rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 0.45rem 1.1rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .ctrl-btn:hover:not(:disabled) { border-color: var(--gold); color: var(--parchment); background: rgba(196,151,42,0.06); }
+    .ctrl-btn:disabled { opacity: 0.25; cursor: default; }
+
+    /* HISTORY */
+    .history-panel { width: 100%; max-width: 460px; border-top: 1px solid rgba(196,151,42,0.1); padding-top: 1.5rem; }
+    .history-title { font-size: 0.58rem; letter-spacing: 0.25em; text-transform: uppercase; color: var(--muted); margin-bottom: 1rem; }
+    .history-list { display: flex; flex-direction: column; gap: 0.3rem; max-height: 160px; overflow-y: auto; }
+    .history-list::-webkit-scrollbar { width: 3px; }
+    .history-list::-webkit-scrollbar-thumb { background: rgba(196,151,42,0.15); }
+    @keyframes slideIn { from{opacity:0;transform:translateX(-6px)}to{opacity:1;transform:none} }
+    .history-entry { display:flex; align-items:center; gap:0.6rem; font-size:0.68rem; color:rgba(240,237,228,0.45); padding:0.25rem 0; border-bottom:1px solid rgba(196,151,42,0.05); animation:slideIn 0.2s ease; }
+    .history-num { color:rgba(196,151,42,0.25); min-width:1.5rem; text-align:right; font-size:0.58rem; }
+    .history-player { font-size:0.58rem; padding:0.12rem 0.35rem; }
+    .history-player.p1 { background:rgba(196,151,42,0.15); color:var(--gold); }
+    .history-player.p2 { background:rgba(122,42,28,0.25); color:var(--p2light); }
+
+    /* MODAL */
+    .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:200; align-items:center; justify-content:center; padding:2rem; }
+    .modal-overlay.open { display:flex; }
+    @keyframes modalIn { from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none} }
+    .modal { background:#0a1a0c; border:1px solid rgba(196,151,42,0.25); max-width:480px; width:100%; padding:2.5rem; position:relative; animation:modalIn 0.3s ease; }
+    .modal-close { position:absolute; top:1rem; right:1rem; background:none; border:none; color:var(--muted); font-size:1.1rem; cursor:pointer; transition:color 0.2s; }
+    .modal-close:hover { color:var(--parchment); }
+    .modal h2 { font-family:'Playfair Display',serif; font-size:1.5rem; margin-bottom:0.25rem; }
+    .modal .sub { font-size:0.62rem; letter-spacing:0.18em; text-transform:uppercase; color:var(--gold); margin-bottom:1.5rem; }
+    .rules-list { list-style:none; counter-reset:rules; }
+    .rules-list li { counter-increment:rules; padding:0.45rem 0 0.45rem 2rem; position:relative; border-bottom:1px solid rgba(196,151,42,0.07); font-size:0.8rem; line-height:1.65; color:rgba(240,237,228,0.72); }
+    .rules-list li:last-child { border-bottom:none; }
+    .rules-list li::before { content:counter(rules); position:absolute; left:0; font-size:0.62rem; color:var(--gold); top:0.6rem; }
+    .rules-list strong { color:var(--parchment); }
+  </style>
+</head>
+<body>
+
+  <a href="../games/mu-torere.html" class="back-link">← Back to Mū Tōrere</a>
+  <h1 class="game-title">Mū Tōrere</h1>
+  <p class="game-subtitle">Māori Strategy Game · Aotearoa</p>
+
+  <div class="mode-selector">
+    <button class="mode-btn active" id="btn2p" onclick="setMode('2p')">2 Players</button>
+    <button class="mode-btn" id="btnAI" onclick="setMode('ai')">vs Computer</button>
+  </div>
+
+  <div class="status-bar p1" id="statusBar">Player 1's turn — select a piece to move</div>
+
+  <div class="score-tracker">
+    <div class="score-block">
+      <div class="score-name">Player 1</div>
+      <div class="score-wins" id="p1wins">0</div>
+    </div>
+    <div class="score-divider">wins</div>
+    <div class="score-block">
+      <div class="score-name" id="p2name">Player 2</div>
+      <div class="score-wins" id="p2wins">0</div>
+    </div>
+  </div>
+
+  <div class="piece-legend">
+    <div class="legend-item"><div class="legend-dot p1"></div><span id="p1legend">Player 1</span></div>
+    <div class="legend-item"><div class="legend-dot p2"></div><span id="p2legend">Player 2</span></div>
+  </div>
+
+  <div class="board-wrap">
+    <canvas id="boardCanvas" width="420" height="420"></canvas>
+  </div>
+
+  <div class="controls">
+    <button class="ctrl-btn" onclick="resetGame()">↺ New Game</button>
+    <button class="ctrl-btn" id="undoBtn" onclick="undoMove()" disabled>↩ Undo</button>
+    <button class="ctrl-btn" onclick="openRules()">? Rules</button>
+  </div>
+
+  <div class="history-panel">
+    <div class="history-title">Move History</div>
+    <div class="history-list" id="historyList"></div>
+  </div>
+
+  <div class="modal-overlay" id="rulesModal">
+    <div class="modal">
+      <button class="modal-close" onclick="closeRules()">✕</button>
+      <h2>How to Play</h2>
+      <p class="sub">Mū Tōrere · Māori Strategy Game</p>
+      <ol class="rules-list">
+        <li>The board has <strong>8 outer points</strong> (kewai) arranged in a star, and one <strong>central space</strong> (pūtahi). Each player has 4 pieces.</li>
+        <li>Player 1's pieces start on points 0–3. Player 2's pieces start on points 4–7. The centre begins empty.</li>
+        <li>On your turn, move one of your pieces to an <strong>adjacent empty space</strong>. Outer points are adjacent to their neighbours and to the centre.</li>
+        <li><strong>Key rule:</strong> A piece may only move to the centre (pūtahi) if it is adjacent to at least one of your <strong>opponent's pieces</strong>.</li>
+        <li>A piece in the centre may move to <strong>any</strong> outer point.</li>
+        <li>You cannot jump over pieces or move to an occupied space.</li>
+        <li>The player who <strong>cannot move</strong> on their turn loses. Block your opponent to win!</li>
+      </ol>
+    </div>
+  </div>
+
+<script>
+// ============================================================
+// BOARD LAYOUT
+// The board has 9 positions:
+//   0-7: outer kewai (star points), arranged clockwise from top
+//   8:   central pūtahi
+//
+// Adjacency:
+//   Each kewai i is adjacent to kewai (i-1+8)%8 and (i+1)%8, plus centre (8)
+//   Centre (8) is adjacent to all kewai 0-7
+// ============================================================
+
+const SIZE = 420;
+const CX = SIZE / 2;
+const CY = SIZE / 2;
+const OUTER_R = 160; // radius of star points
+const PIECE_R = 18;
+
+// Compute positions of the 9 nodes
+function getPositions() {
+  const pos = [];
+  for (let i = 0; i < 8; i++) {
+    const angle = (i * Math.PI / 4) - Math.PI / 2; // start from top
+    pos.push({
+      x: CX + OUTER_R * Math.cos(angle),
+      y: CY + OUTER_R * Math.sin(angle)
+    });
+  }
+  pos.push({ x: CX, y: CY }); // centre = index 8
+  return pos;
+}
+
+const POSITIONS = getPositions();
+
+function getAdjacentTo(idx) {
+  if (idx === 8) return [0,1,2,3,4,5,6,7]; // centre connects to all
+  return [(idx + 7) % 8, (idx + 1) % 8, 8]; // neighbours + centre
+}
+
+// ============================================================
+// STATE
+// ============================================================
+// board[i] = 0 (empty), 1 (player 1), 2 (player 2)
+let board = [];
+let currentPlayer = 1;
+let gameOver = false;
+let selectedIdx = -1;
+let mode = '2p';
+let wins = [0, 0];
+let history = [];
+let undoStack = [];
+let aiThinking = false;
+
+const canvas = document.getElementById('boardCanvas');
+const ctx = canvas.getContext('2d');
+
+function initBoard() {
+  // P1 on 0-3, P2 on 4-7, centre empty
+  board = [1,1,1,1, 2,2,2,2, 0];
+  currentPlayer = 1;
+  gameOver = false;
+  selectedIdx = -1;
+  history = [];
+  undoStack = [];
+  aiThinking = false;
+  draw();
+  renderHistory();
+  updateStatus();
+  document.getElementById('undoBtn').disabled = true;
+}
+
+function setMode(m) {
+  mode = m;
+  document.getElementById('btn2p').classList.toggle('active', m === '2p');
+  document.getElementById('btnAI').classList.toggle('active', m === 'ai');
+  const n = m === 'ai' ? 'Computer' : 'Player 2';
+  document.getElementById('p2name').textContent = n;
+  document.getElementById('p2legend').textContent = n;
+  wins = [0, 0];
+  document.getElementById('p1wins').textContent = 0;
+  document.getElementById('p2wins').textContent = 0;
+  initBoard();
+}
+
+// ============================================================
+// DRAWING
+// ============================================================
+function draw() {
+  ctx.clearRect(0, 0, SIZE, SIZE);
+
+  // Background
+  const bg = ctx.createRadialGradient(CX, CY, 20, CX, CY, SIZE * 0.6);
+  bg.addColorStop(0, '#112213');
+  bg.addColorStop(1, '#0a150b');
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, SIZE, SIZE);
+
+  // Draw koru / spiral decorations subtly
+  drawDecorations();
+
+  // Draw connecting lines (star spokes + rim)
+  ctx.strokeStyle = 'rgba(45,82,48,0.6)';
+  ctx.lineWidth = 1.5;
+
+  // Rim: connect outer points
+  ctx.beginPath();
+  for (let i = 0; i < 8; i++) {
+    const p = POSITIONS[i];
+    i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y);
+  }
+  ctx.closePath();
+  ctx.stroke();
+
+  // Spokes: centre to each outer point
+  for (let i = 0; i < 8; i++) {
+    ctx.beginPath();
+    ctx.moveTo(CX, CY);
+    ctx.lineTo(POSITIONS[i].x, POSITIONS[i].y);
+    ctx.stroke();
+  }
+
+  // Valid move targets from selected piece
+  const validTargets = selectedIdx >= 0 ? getValidTargets(currentPlayer, selectedIdx) : [];
+  const allValidSources = !gameOver && !aiThinking ? getValidSources(currentPlayer) : [];
+
+  // Draw nodes
+  for (let i = 0; i < 9; i++) {
+    const p = POSITIONS[i];
+    const isCentre = i === 8;
+    const isSelected = i === selectedIdx;
+    const isValidTarget = validTargets.includes(i);
+    const isValidSource = allValidSources.includes(i) && selectedIdx < 0;
+
+    // Node background
+    const nodeR = isCentre ? 28 : 22;
+    const grad = ctx.createRadialGradient(p.x - 4, p.y - 4, 2, p.x, p.y, nodeR);
+
+    if (isCentre) {
+      grad.addColorStop(0, '#1a3a1c');
+      grad.addColorStop(1, '#0a1a0c');
+    } else {
+      grad.addColorStop(0, '#162a18');
+      grad.addColorStop(1, '#0d1e0f');
+    }
+
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, nodeR, 0, Math.PI * 2);
+    ctx.fillStyle = grad;
+    ctx.fill();
+
+    // Node border
+    let borderColor = 'rgba(45,82,48,0.5)';
+    if (isSelected) borderColor = 'rgba(196,151,42,1)';
+    else if (isValidTarget) borderColor = 'rgba(196,151,42,0.7)';
+    else if (isValidSource) borderColor = board[i] === 1 ? 'rgba(196,151,42,0.5)' : 'rgba(192,80,48,0.5)';
+    else if (isCentre) borderColor = 'rgba(45,82,48,0.9)';
+
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, nodeR, 0, Math.PI * 2);
+    ctx.strokeStyle = borderColor;
+    ctx.lineWidth = isSelected || isValidTarget ? 2 : 1.5;
+    ctx.stroke();
+
+    // Valid target glow
+    if (isValidTarget) {
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, nodeR + 5, 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgba(196,151,42,0.2)';
+      ctx.lineWidth = 4;
+      ctx.stroke();
+    }
+
+    // Centre label
+    if (isCentre && board[8] === 0) {
+      ctx.fillStyle = 'rgba(45,82,48,0.5)';
+      ctx.font = '13px serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('✦', p.x, p.y);
+    }
+
+    // Node index label (small)
+    if (!isCentre) {
+      ctx.fillStyle = 'rgba(196,151,42,0.2)';
+      ctx.font = '9px DM Mono, monospace';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+    }
+
+    // Draw piece
+    if (board[i] !== 0) {
+      drawPiece(p.x, p.y, board[i], isSelected);
+    }
+  }
+
+  // Putahi label
+  ctx.fillStyle = 'rgba(196,151,42,0.25)';
+  ctx.font = '10px DM Mono, monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText('PŪTAHI', CX, CY + 44);
+
+  // Kewai labels at a couple of points
+  ctx.fillStyle = 'rgba(196,151,42,0.15)';
+  ctx.font = '9px DM Mono, monospace';
+  const labelPos = POSITIONS[0];
+  ctx.fillText('KEWAI', labelPos.x, labelPos.y - 32);
+}
+
+function drawPiece(x, y, player, selected) {
+  const color     = player === 1 ? '#c4972a' : '#7a2a1c';
+  const highlight = player === 1 ? '#e8c060' : '#c05030';
+  const r = 13;
+
+  // Shadow
+  ctx.beginPath();
+  ctx.arc(x + 2, y + 2, r, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(0,0,0,0.5)';
+  ctx.fill();
+
+  // Main body
+  const grad = ctx.createRadialGradient(x - 4, y - 4, 1, x, y, r);
+  grad.addColorStop(0, highlight);
+  grad.addColorStop(0.5, color);
+  grad.addColorStop(1, player === 1 ? '#7a5010' : '#4a1008');
+  ctx.beginPath();
+  ctx.arc(x, y, r, 0, Math.PI * 2);
+  ctx.fillStyle = grad;
+  ctx.fill();
+
+  // Rim
+  ctx.beginPath();
+  ctx.arc(x, y, r, 0, Math.PI * 2);
+  ctx.strokeStyle = selected ? 'rgba(255,255,255,0.6)' : 'rgba(255,255,255,0.15)';
+  ctx.lineWidth = selected ? 2 : 1;
+  ctx.stroke();
+
+  // Selection pulse ring
+  if (selected) {
+    ctx.beginPath();
+    ctx.arc(x, y, r + 6, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(196,151,42,0.5)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  }
+}
+
+function drawDecorations() {
+  // Subtle koru-inspired spiral arcs in corners
+  ctx.save();
+  ctx.globalAlpha = 0.04;
+  ctx.strokeStyle = '#c4972a';
+  ctx.lineWidth = 8;
+  const corners = [{x:30,y:30},{x:390,y:30},{x:30,y:390},{x:390,y:390}];
+  corners.forEach(c => {
+    ctx.beginPath();
+    ctx.arc(c.x, c.y, 25, 0, Math.PI * 1.5);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(c.x, c.y, 15, 0, Math.PI * 1.2);
+    ctx.stroke();
+  });
+  ctx.restore();
+}
+
+// ============================================================
+// GAME LOGIC
+// ============================================================
+function getValidSources(player) {
+  const sources = [];
+  for (let i = 0; i < 9; i++) {
+    if (board[i] === player) {
+      if (getValidTargets(player, i).length > 0) sources.push(i);
+    }
+  }
+  return sources;
+}
+
+function getValidTargets(player, fromIdx) {
+  const targets = [];
+  const adj = getAdjacentTo(fromIdx);
+  for (const t of adj) {
+    if (board[t] !== 0) continue; // must be empty
+    if (t === 8) {
+      // Moving to centre: must be adjacent to at least one opponent piece
+      const opp = player === 1 ? 2 : 1;
+      const adjToFrom = getAdjacentTo(fromIdx).filter(x => x !== 8);
+      const nextToOpp = adjToFrom.some(n => board[n] === opp);
+      // Also check fromIdx itself is adjacent to opponent
+      // Actually: the piece at fromIdx must be adjacent to opponent
+      // Adjacent means neighbouring kewai or centre
+      const fromAdj = getAdjacentTo(fromIdx);
+      const hasOppNeighbour = fromAdj.some(n => board[n] === opp);
+      if (hasOppNeighbour) targets.push(t);
+    } else {
+      targets.push(t);
+    }
+  }
+  return targets;
+}
+
+function hasAnyMove(player) {
+  return getValidSources(player).length > 0;
+}
+
+// ============================================================
+// CLICK HANDLER
+// ============================================================
+canvas.addEventListener('click', function(e) {
+  if (gameOver || aiThinking) return;
+  if (mode === 'ai' && currentPlayer === 2) return;
+
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = canvas.width / rect.width;
+  const scaleY = canvas.height / rect.height;
+  const mx = (e.clientX - rect.left) * scaleX;
+  const my = (e.clientY - rect.top) * scaleY;
+
+  // Find clicked node
+  let clicked = -1;
+  for (let i = 0; i < 9; i++) {
+    const p = POSITIONS[i];
+    const r = i === 8 ? 28 : 22;
+    const dx = mx - p.x, dy = my - p.y;
+    if (dx*dx + dy*dy <= r*r) { clicked = i; break; }
+  }
+  if (clicked < 0) return;
+
+  if (selectedIdx < 0) {
+    // Select a piece
+    if (board[clicked] === currentPlayer) {
+      const targets = getValidTargets(currentPlayer, clicked);
+      if (targets.length > 0) {
+        selectedIdx = clicked;
+        draw();
+      }
+    }
+  } else {
+    // Try to move to clicked
+    const targets = getValidTargets(currentPlayer, selectedIdx);
+    if (targets.includes(clicked)) {
+      executeMove(selectedIdx, clicked);
+    } else if (board[clicked] === currentPlayer) {
+      // Reselect
+      selectedIdx = clicked;
+      draw();
+    } else {
+      selectedIdx = -1;
+      draw();
+    }
+  }
+});
+
+function executeMove(from, to) {
+  // Save undo snapshot
+  if (!(mode === 'ai' && currentPlayer === 2)) {
+    undoStack.push({ board: [...board], currentPlayer, history: [...history], selectedIdx });
+  }
+
+  const player = currentPlayer;
+  board[to] = board[from];
+  board[from] = 0;
+  selectedIdx = -1;
+
+  const fromLabel = from === 8 ? 'centre' : `point ${from + 1}`;
+  const toLabel   = to === 8   ? 'centre' : `point ${to + 1}`;
+  history.push({ player, text: `${fromLabel} → ${toLabel}` });
+
+  // Check if opponent can move
+  const opp = player === 1 ? 2 : 1;
+  currentPlayer = opp;
+
+  if (!hasAnyMove(opp)) {
+    gameOver = true;
+    draw();
+    renderHistory();
+    showResult(player);
+    document.getElementById('undoBtn').disabled = true;
+    return;
+  }
+
+  draw();
+  renderHistory();
+  updateStatus();
+  document.getElementById('undoBtn').disabled = undoStack.length === 0;
+
+  if (mode === 'ai' && currentPlayer === 2 && !gameOver) triggerAI();
+}
+
+// ============================================================
+// AI — minimax with depth limit
+// ============================================================
+function triggerAI() {
+  aiThinking = true;
+  const bar = document.getElementById('statusBar');
+  bar.className = 'status-bar thinking';
+  bar.textContent = 'Computer is thinking...';
+  draw();
+
+  setTimeout(() => {
+    const move = getBestMove([...board], 2, 7);
+    aiThinking = false;
+    if (move) executeMove(move.from, move.to);
+  }, 600);
+}
+
+function getBestMove(b, player, depth) {
+  const sources = getValidSourcesFor(b, player);
+  let bestScore = -Infinity, bestMove = null;
+
+  for (const from of sources) {
+    for (const to of getValidTargetsFor(b, player, from)) {
+      const nb = [...b];
+      nb[to] = nb[from]; nb[from] = 0;
+      const score = minimaxBoard(nb, player === 1 ? 2 : 1, depth - 1, -Infinity, Infinity, false);
+      if (score > bestScore) { bestScore = score; bestMove = { from, to }; }
+    }
+  }
+  return bestMove;
+}
+
+function minimaxBoard(b, player, depth, alpha, beta, maximizing) {
+  const opp = player === 1 ? 2 : 1;
+  if (!getValidSourcesFor(b, player).length) return maximizing ? -100 : 100;
+  if (depth === 0) return 0;
+
+  const sources = getValidSourcesFor(b, player);
+  if (maximizing) {
+    let best = -Infinity;
+    for (const from of sources) {
+      for (const to of getValidTargetsFor(b, player, from)) {
+        const nb = [...b]; nb[to] = nb[from]; nb[from] = 0;
+        best = Math.max(best, minimaxBoard(nb, opp, depth-1, alpha, beta, false));
+        alpha = Math.max(alpha, best);
+        if (beta <= alpha) break;
+      }
+    }
+    return best;
+  } else {
+    let best = Infinity;
+    for (const from of sources) {
+      for (const to of getValidTargetsFor(b, player, from)) {
+        const nb = [...b]; nb[to] = nb[from]; nb[from] = 0;
+        best = Math.min(best, minimaxBoard(nb, opp, depth-1, alpha, beta, true));
+        beta = Math.min(beta, best);
+        if (beta <= alpha) break;
+      }
+    }
+    return best;
+  }
+}
+
+function getValidSourcesFor(b, player) {
+  const sources = [];
+  for (let i = 0; i < 9; i++) {
+    if (b[i] === player && getValidTargetsFor(b, player, i).length > 0) sources.push(i);
+  }
+  return sources;
+}
+
+function getValidTargetsFor(b, player, fromIdx) {
+  const targets = [];
+  const adj = getAdjacentTo(fromIdx);
+  const opp = player === 1 ? 2 : 1;
+  for (const t of adj) {
+    if (b[t] !== 0) continue;
+    if (t === 8) {
+      const fromAdj = getAdjacentTo(fromIdx);
+      const hasOppNeighbour = fromAdj.some(n => b[n] === opp);
+      if (hasOppNeighbour) targets.push(t);
+    } else {
+      targets.push(t);
+    }
+  }
+  return targets;
+}
+
+// ============================================================
+// UNDO
+// ============================================================
+function undoMove() {
+  if (!undoStack.length) return;
+  const s = undoStack.pop();
+  board = s.board;
+  currentPlayer = s.currentPlayer;
+  history = s.history;
+  selectedIdx = -1;
+  gameOver = false;
+  aiThinking = false;
+  draw();
+  renderHistory();
+  updateStatus();
+  document.getElementById('undoBtn').disabled = undoStack.length === 0;
+}
+
+// ============================================================
+// UI
+// ============================================================
+function updateStatus() {
+  const bar = document.getElementById('statusBar');
+  const name = currentPlayer === 1 ? 'Player 1' : (mode === 'ai' ? 'Computer' : 'Player 2');
+  bar.textContent = selectedIdx >= 0
+    ? `${name} — click a highlighted point to move`
+    : `${name}'s turn — select a piece to move`;
+  bar.className = `status-bar p${currentPlayer}`;
+}
+
+function showResult(winner) {
+  const bar = document.getElementById('statusBar');
+  const name = winner === 1 ? 'Player 1' : (mode === 'ai' ? 'Computer' : 'Player 2');
+  bar.textContent = `🏆 ${name} wins! Opponent is blocked.`;
+  bar.className = 'status-bar gameover';
+  if (winner === 1) wins[0]++; else wins[1]++;
+  document.getElementById('p1wins').textContent = wins[0];
+  document.getElementById('p2wins').textContent = wins[1];
+}
+
+function renderHistory() {
+  const list = document.getElementById('historyList');
+  list.innerHTML = '';
+  history.slice().reverse().forEach((entry, i) => {
+    const div = document.createElement('div');
+    div.className = 'history-entry';
+    const num = document.createElement('span');
+    num.className = 'history-num';
+    num.textContent = history.length - i;
+    const p = document.createElement('span');
+    p.className = `history-player p${entry.player}`;
+    p.textContent = entry.player === 1 ? 'P1' : (mode === 'ai' ? 'CPU' : 'P2');
+    const t = document.createElement('span');
+    t.textContent = entry.text;
+    div.appendChild(num); div.appendChild(p); div.appendChild(t);
+    list.appendChild(div);
+  });
+}
+
+function openRules() { document.getElementById('rulesModal').classList.add('open'); }
+function closeRules() { document.getElementById('rulesModal').classList.remove('open'); }
+document.getElementById('rulesModal').addEventListener('click', e => {
+  if (e.target === document.getElementById('rulesModal')) closeRules();
+});
+
+function resetGame() { initBoard(); }
+
+initBoard();
+</script>
+</body>
+</html>
