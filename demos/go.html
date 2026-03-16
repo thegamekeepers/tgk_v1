@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Play Go — The Game Keeper</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --ink: #0d1007;
+      --board-tan: #C8A86B;
+      --board-dark: #A8883B;
+      --gold: #c4972a;
+      --muted: #9a8a6a;
+      --p1: #1a1a1a;
+      --p2: #f0ede4;
+      --parchment: #f0ede4;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #111a08;
+      color: var(--parchment);
+      font-family: 'DM Mono', monospace;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem 1rem 4rem;
+      background-image:
+        radial-gradient(ellipse at 20% 20%, rgba(50,80,20,0.2) 0%, transparent 60%),
+        radial-gradient(ellipse at 80% 80%, rgba(196,151,42,0.06) 0%, transparent 50%);
+    }
+
+    .back-link {
+      align-self: flex-start;
+      color: var(--gold);
+      text-decoration: none;
+      font-size: 0.75rem;
+      letter-spacing: 0.1em;
+      margin-bottom: 2rem;
+      opacity: 0.7;
+      transition: opacity 0.2s;
+    }
+    .back-link:hover { opacity: 1; }
+
+    .game-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 2.4rem;
+      font-weight: 700;
+      margin-bottom: 0.2rem;
+      text-align: center;
+    }
+    .game-subtitle {
+      font-size: 0.65rem;
+      letter-spacing: 0.28em;
+      color: var(--gold);
+      text-transform: uppercase;
+      margin-bottom: 1.5rem;
+      text-align: center;
+    }
+
+    .mode-selector { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; }
+    .mode-btn {
+      background: none;
+      border: 1px solid rgba(196,151,42,0.25);
+      color: rgba(240,237,228,0.4);
+      font-family: 'DM Mono', monospace;
+      font-size: 0.68rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      padding: 0.4rem 1rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .mode-btn.active { border-color: var(--gold); color: var(--gold); background: rgba(196,151,42,0.08); }
+    .mode-btn:hover { border-color: var(--gold); color: var(--parchment); }
+
+    .status-bar {
+      padding: 0.65rem 2rem;
+      font-size: 0.78rem;
+      letter-spacing: 0.08em;
+      margin-bottom: 1.5rem;
+      text-align: center;
+      min-width: 360px;
+      border: 1px solid rgba(196,151,42,0.2);
+      background: rgba(196,151,42,0.04);
+      transition: all 0.3s;
+    }
+    .status-bar.black { border-color: rgba(30,30,30,0.8); background: rgba(0,0,0,0.2); }
+    .status-bar.white { border-color: rgba(240,237,228,0.5); background: rgba(240,237,228,0.06); }
+    .status-bar.gameover { border-color: var(--gold); background: rgba(196,151,42,0.12); color: var(--gold); }
+    .status-bar.thinking { border-color: rgba(196,151,42,0.4); color: rgba(196,151,42,0.7); font-style: italic; }
+
+    .main-area {
+      display: flex;
+      gap: 2rem;
+      align-items: flex-start;
+    }
+
+    /* Board */
+    .board-wrap {
+      position: relative;
+    }
+
+    canvas#goBoard {
+      display: block;
+      cursor: crosshair;
+      border-radius: 2px;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.7), 0 0 0 1px rgba(100,80,20,0.4);
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: 190px;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .score-panel {
+      border: 1px solid rgba(196,151,42,0.2);
+      padding: 1rem;
+      background: rgba(0,0,0,0.3);
+    }
+    .score-panel h4 {
+      font-size: 0.6rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-bottom: 0.75rem;
+    }
+    .score-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.75rem;
+      margin-bottom: 0.4rem;
+    }
+    .score-dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      display: inline-block;
+      margin-right: 6px;
+    }
+    .score-dot.black { background: #1a1a1a; border: 1px solid #555; }
+    .score-dot.white { background: #f0ede4; border: 1px solid #aaa; }
+    .score-val { font-size: 1rem; color: var(--gold); }
+    .score-divider { border: none; border-top: 1px solid rgba(196,151,42,0.15); margin: 0.5rem 0; }
+    .score-sub { font-size: 0.62rem; color: rgba(240,237,228,0.4); margin-bottom: 0.25rem; display: flex; justify-content: space-between; }
+    .score-total-row { display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; margin-top: 0.3rem; padding-top: 0.3rem; border-top: 1px solid rgba(196,151,42,0.2); }
+    .score-total-val { font-size: 1.1rem; color: var(--gold); }
+    .score-winner { text-align: center; margin-top: 0.6rem; font-size: 0.72rem; color: var(--gold); letter-spacing: 0.08em; padding: 0.4rem; border: 1px solid rgba(196,151,42,0.3); background: rgba(196,151,42,0.08); display: none; }
+
+    .controls {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .ctrl-btn {
+      background: none;
+      border: 1px solid rgba(196,151,42,0.25);
+      color: rgba(240,237,228,0.6);
+      font-family: 'DM Mono', monospace;
+      font-size: 0.68rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 0.5rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: center;
+    }
+    .ctrl-btn:hover { border-color: var(--gold); color: var(--parchment); }
+    .ctrl-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+    .ctrl-btn.pass-btn { color: rgba(196,151,42,0.7); border-color: rgba(196,151,42,0.3); }
+
+    .history-panel {
+      border: 1px solid rgba(196,151,42,0.15);
+      background: rgba(0,0,0,0.2);
+      padding: 0.75rem;
+      flex: 1;
+      min-height: 120px;
+      max-height: 220px;
+      overflow-y: auto;
+    }
+    .history-panel h4 {
+      font-size: 0.6rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-bottom: 0.6rem;
+    }
+    .history-entry {
+      display: flex;
+      gap: 0.5rem;
+      font-size: 0.65rem;
+      color: rgba(240,237,228,0.5);
+      margin-bottom: 0.25rem;
+    }
+    .history-entry .h-num { color: rgba(196,151,42,0.4); width: 20px; text-align: right; }
+    .history-entry .h-player { width: 28px; }
+    .history-entry .h-player.black { color: #aaa; }
+    .history-entry .h-player.white { color: #ddd; }
+
+    /* Rules modal */
+    .modal-overlay {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.85);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: #1a2010;
+      border: 1px solid rgba(196,151,42,0.3);
+      padding: 2rem;
+      max-width: 520px;
+      width: 90%;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+    .modal h3 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.4rem;
+      color: var(--gold);
+      margin-bottom: 1rem;
+    }
+    .modal p, .modal li {
+      font-size: 0.78rem;
+      line-height: 1.7;
+      color: rgba(240,237,228,0.75);
+      margin-bottom: 0.5rem;
+    }
+    .modal ul { padding-left: 1.2rem; }
+    .modal-close {
+      margin-top: 1.5rem;
+      background: none;
+      border: 1px solid rgba(196,151,42,0.3);
+      color: var(--gold);
+      font-family: 'DM Mono', monospace;
+      font-size: 0.7rem;
+      letter-spacing: 0.1em;
+      padding: 0.5rem 1.5rem;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+<a href="../index.html" class="back-link">← The Game Keeper</a>
+
+<h1 class="game-title">Go <em style="font-size:1.6rem; opacity:0.7">围棋</em></h1>
+<p class="game-subtitle">China · ~2000 BC · 9×9 Demo Board</p>
+
+<div class="mode-selector">
+  <button class="mode-btn active" onclick="setMode('2p')" id="btn2p">Two Players</button>
+  <button class="mode-btn" onclick="setMode('ai')" id="btnAI">vs Computer</button>
+</div>
+
+<div class="status-bar black" id="statusBar">Black's turn — click an intersection to place a stone</div>
+
+<div class="main-area">
+  <div class="board-wrap">
+    <canvas id="goBoard" width="450" height="450"></canvas>
+  </div>
+
+  <div class="sidebar">
+    <div class="score-panel">
+      <h4>Score</h4>
+      <div class="score-sub"><span><span class="score-dot black" style="width:8px;height:8px"></span>Black</span><span><span class="score-dot white" style="width:8px;height:8px"></span>White</span></div>
+      <div class="score-row"><span>Territory</span><span style="display:flex;gap:1rem"><span class="score-val" id="blackTerritory">—</span><span class="score-val" id="whiteTerritory">—</span></span></div>
+      <div class="score-row"><span>Captures</span><span style="display:flex;gap:1rem"><span class="score-val" id="blackCaptures">0</span><span class="score-val" id="whiteCaptures">0</span></span></div>
+      <div class="score-row" style="opacity:0.6;font-size:0.65rem"><span>Komi (W)</span><span>+6.5</span></div>
+      <hr class="score-divider">
+      <div class="score-total-row"><span><span class="score-dot black" style="width:8px;height:8px"></span>Total</span><span class="score-total-val" id="blackTotal">—</span></div>
+      <div class="score-total-row"><span><span class="score-dot white" style="width:8px;height:8px"></span>Total</span><span class="score-total-val" id="whiteTotal">—</span></div>
+      <div class="score-winner" id="scoreWinner"></div>
+    </div>
+
+    <div class="controls">
+      <button class="ctrl-btn pass-btn" id="passBtn" onclick="passMove()">Pass Turn</button>
+      <button class="ctrl-btn" id="undoBtn" onclick="undoMove()" disabled>Undo</button>
+      <button class="ctrl-btn" onclick="openRules()">Rules</button>
+      <button class="ctrl-btn" onclick="resetGame()">New Game</button>
+    </div>
+
+    <div class="history-panel">
+      <h4>Move History</h4>
+      <div id="historyList"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Rules Modal -->
+<div class="modal-overlay" id="rulesModal">
+  <div class="modal">
+    <h3>How to Play Go</h3>
+    <p>Go is played on a grid of intersections. Players take turns placing stones of their colour.</p>
+    <ul>
+      <li><strong>Capture:</strong> Surround an opponent's stone (or group) on all adjacent intersections to remove it.</li>
+      <li><strong>Ko:</strong> You may not recreate the exact board position from the previous turn.</li>
+      <li><strong>Pass:</strong> Either player may pass. Two consecutive passes end the game.</li>
+      <li><strong>Scoring:</strong> Count territory (empty intersections surrounded) plus captures. Higher score wins.</li>
+    </ul>
+    <p>This demo uses a 9×9 board — perfect for learning. Full Go is played on 19×19.</p>
+    <button class="modal-close" onclick="closeRules()">Close</button>
+  </div>
+</div>
+
+<script>
+const SIZE = 9;
+const CELL = 46;
+const MARGIN = 30;
+const CANVAS = 450;
+
+const canvas = document.getElementById('goBoard');
+const ctx = canvas.getContext('2d');
+
+let board = [];          // 0=empty, 1=black, 2=white
+let currentPlayer = 1;  // 1=black, 2=white
+let captures = [0, 0];  // [black captured by white, white captured by black] — actually [black's captures of white, white's captures of black]
+let history = [];
+let undoStack = [];
+let consecutivePasses = 0;
+let gameOver = false;
+let mode = '2p';
+let aiThinking = false;
+let lastBoard = null;    // for ko rule
+
+function init() {
+  board = Array(SIZE * SIZE).fill(0);
+  currentPlayer = 1;
+  captures = [0, 0];
+  history = [];
+  undoStack = [];
+  consecutivePasses = 0;
+  gameOver = false;
+  aiThinking = false;
+  lastBoard = null;
+  draw();
+  renderHistory();
+  updateStatus();
+  document.getElementById('undoBtn').disabled = true;
+  document.getElementById('passBtn').disabled = false;
+  document.getElementById('passBtn').disabled = false;
+}
+
+function idx(r, c) { return r * SIZE + c; }
+function row(i) { return Math.floor(i / SIZE); }
+function col(i) { return i % SIZE; }
+
+function px(c) { return MARGIN + c * CELL; }
+function py(r) { return MARGIN + r * CELL; }
+
+function draw() {
+  // Board background
+  const grad = ctx.createLinearGradient(0, 0, CANVAS, CANVAS);
+  grad.addColorStop(0, '#C8A86B');
+  grad.addColorStop(1, '#A8803A');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, CANVAS, CANVAS);
+
+  // Grid lines
+  ctx.strokeStyle = 'rgba(80,50,10,0.7)';
+  ctx.lineWidth = 1;
+  for (let i = 0; i < SIZE; i++) {
+    ctx.beginPath(); ctx.moveTo(px(0), py(i)); ctx.lineTo(px(SIZE-1), py(i)); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(px(i), py(0)); ctx.lineTo(px(i), py(SIZE-1)); ctx.stroke();
+  }
+
+  // Star points (hoshi) for 9x9: center + 4 corners of inner grid
+  const hoshi = [[2,2],[2,6],[6,2],[6,6],[4,4]];
+  ctx.fillStyle = 'rgba(80,50,10,0.8)';
+  hoshi.forEach(([r,c]) => {
+    ctx.beginPath();
+    ctx.arc(px(c), py(r), 3, 0, Math.PI*2);
+    ctx.fill();
+  });
+
+  // Stones
+  for (let i = 0; i < SIZE * SIZE; i++) {
+    if (board[i] === 0) continue;
+    const r = row(i), c = col(i);
+    const x = px(c), y = py(r);
+    const isBlack = board[i] === 1;
+
+    // Shadow
+    ctx.beginPath();
+    ctx.arc(x + 1.5, y + 2, 15, 0, Math.PI*2);
+    ctx.fillStyle = 'rgba(0,0,0,0.35)';
+    ctx.fill();
+
+    // Stone
+    const sg = ctx.createRadialGradient(x-4, y-4, 2, x, y, 15);
+    if (isBlack) {
+      sg.addColorStop(0, '#555');
+      sg.addColorStop(1, '#0a0a0a');
+    } else {
+      sg.addColorStop(0, '#fff');
+      sg.addColorStop(1, '#ccc');
+    }
+    ctx.beginPath();
+    ctx.arc(x, y, 15, 0, Math.PI*2);
+    ctx.fillStyle = sg;
+    ctx.fill();
+
+    // Shine
+    if (isBlack) {
+      ctx.beginPath();
+      ctx.arc(x - 5, y - 5, 5, 0, Math.PI*2);
+      ctx.fillStyle = 'rgba(255,255,255,0.12)';
+      ctx.fill();
+    }
+  }
+
+  // Coordinate labels
+  ctx.fillStyle = 'rgba(80,50,10,0.5)';
+  ctx.font = '9px DM Mono, monospace';
+  ctx.textAlign = 'center';
+  const cols = 'ABCDEFGHJ';
+  for (let i = 0; i < SIZE; i++) {
+    ctx.fillText(cols[i], px(i), MARGIN - 12);
+    ctx.fillText(cols[i], px(i), CANVAS - 8);
+    ctx.textAlign = 'right';
+    ctx.fillText(SIZE - i, MARGIN - 8, py(i) + 4);
+    ctx.textAlign = 'left';
+    ctx.fillText(SIZE - i, px(SIZE-1) + 10, py(i) + 4);
+    ctx.textAlign = 'center';
+  }
+}
+
+canvas.addEventListener('click', e => {
+  if (gameOver || aiThinking) return;
+  if (mode === 'ai' && currentPlayer === 2) return;
+
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = CANVAS / rect.width;
+  const scaleY = CANVAS / rect.height;
+  const mx = (e.clientX - rect.left) * scaleX;
+  const my = (e.clientY - rect.top) * scaleY;
+
+  // Find nearest intersection
+  const c = Math.round((mx - MARGIN) / CELL);
+  const r = Math.round((my - MARGIN) / CELL);
+  if (r < 0 || r >= SIZE || c < 0 || c >= SIZE) return;
+
+  placeStone(r, c);
+});
+
+function placeStone(r, c) {
+  const i = idx(r, c);
+  if (board[i] !== 0) return;
+
+  // Try placing
+  const newBoard = [...board];
+  newBoard[i] = currentPlayer;
+
+  // Capture opponent stones
+  const opp = currentPlayer === 1 ? 2 : 1;
+  let captured = 0;
+  const neighbors = getNeighbors(r, c);
+  neighbors.forEach(([nr, nc]) => {
+    const ni = idx(nr, nc);
+    if (newBoard[ni] === opp) {
+      const group = getGroup(newBoard, nr, nc);
+      if (getLiberties(newBoard, group).length === 0) {
+        group.forEach(gi => { newBoard[gi] = 0; captured++; });
+      }
+    }
+  });
+
+  // Check self-capture (suicide)
+  const myGroup = getGroup(newBoard, r, c);
+  if (getLiberties(newBoard, myGroup).length === 0) return; // illegal
+
+  // Ko rule
+  if (lastBoard && newBoard.join(',') === lastBoard.join(',')) return;
+
+  // Commit
+  undoStack.push({ board: [...board], currentPlayer, captures: [...captures], history: [...history], consecutivePasses, lastBoard: lastBoard ? [...lastBoard] : null });
+  lastBoard = [...board];
+  board = newBoard;
+  if (currentPlayer === 1) captures[0] += captured;
+  else captures[1] += captured;
+
+  const cols = 'ABCDEFGHJ';
+  history.push({ player: currentPlayer, text: `${cols[c]}${SIZE - r}` });
+  consecutivePasses = 0;
+
+  updateCaptures();
+  draw();
+  renderHistory();
+
+  currentPlayer = currentPlayer === 1 ? 2 : 1;
+  updateStatus();
+  document.getElementById('undoBtn').disabled = undoStack.length === 0;
+
+  if (mode === 'ai' && currentPlayer === 2 && !gameOver) {
+    setTimeout(aiMove, 500);
+  }
+}
+
+function passMove() {
+  if (gameOver || aiThinking) return;
+  consecutivePasses++;
+  history.push({ player: currentPlayer, text: 'PASS' });
+  undoStack.push({ board: [...board], currentPlayer, captures: [...captures], history: [...history], consecutivePasses: consecutivePasses - 1, lastBoard: lastBoard ? [...lastBoard] : null });
+
+  if (consecutivePasses >= 2) {
+    gameOver = true;
+    document.getElementById('passBtn').disabled = true;
+    renderHistory();
+    scoreGame();
+    return;
+  }
+
+  renderHistory();
+  currentPlayer = currentPlayer === 1 ? 2 : 1;
+  updateStatus();
+  document.getElementById('undoBtn').disabled = undoStack.length === 0;
+
+  if (mode === 'ai' && currentPlayer === 2 && !gameOver) {
+    setTimeout(aiMove, 500);
+  }
+}
+
+// ============================================================
+// TERRITORY SCORING — flood-fill empty regions
+// ============================================================
+function scoreGame() {
+  const territory = computeTerritory();
+  const blackTerritory = territory.black;
+  const whiteTerritory = territory.white;
+  const KOMI = 6.5;
+
+  const blackTotal = blackTerritory + captures[0];
+  const whiteTotal = whiteTerritory + captures[1] + KOMI;
+
+  // Update sidebar
+  document.getElementById('blackTerritory').textContent = blackTerritory;
+  document.getElementById('whiteTerritory').textContent = whiteTerritory;
+  document.getElementById('blackCaptures').textContent = captures[0];
+  document.getElementById('whiteCaptures').textContent = captures[1];
+  document.getElementById('blackTotal').textContent = blackTotal;
+  document.getElementById('whiteTotal').textContent = whiteTotal.toFixed(1);
+
+  const winnerEl = document.getElementById('scoreWinner');
+  const margin = Math.abs(blackTotal - whiteTotal).toFixed(1);
+  if (blackTotal > whiteTotal) {
+    winnerEl.textContent = `🏆 Black wins by ${margin}`;
+  } else {
+    winnerEl.textContent = `🏆 White wins by ${margin}`;
+  }
+  winnerEl.style.display = 'block';
+
+  const bar = document.getElementById('statusBar');
+  bar.textContent = blackTotal > whiteTotal
+    ? `Black wins! ${blackTotal} – ${whiteTotal} (incl. komi)`
+    : `White wins! ${whiteTotal} – ${blackTotal} (incl. komi)`;
+  bar.className = 'status-bar gameover';
+
+  // Redraw board with territory overlay
+  drawWithTerritory(territory.map);
+}
+
+function computeTerritory() {
+  const visited = new Array(SIZE * SIZE).fill(false);
+  const territoryMap = new Array(SIZE * SIZE).fill(0); // 0=neutral, 1=black, 2=white
+  let blackCount = 0, whiteCount = 0;
+
+  for (let start = 0; start < SIZE * SIZE; start++) {
+    if (board[start] !== 0 || visited[start]) continue;
+
+    // BFS flood-fill this empty region
+    const region = [];
+    const stack = [start];
+    let touchesBlack = false, touchesWhite = false;
+
+    while (stack.length) {
+      const i = stack.pop();
+      if (visited[i]) continue;
+      visited[i] = true;
+      region.push(i);
+
+      const r = Math.floor(i / SIZE), c = i % SIZE;
+      getNeighbors(r, c).forEach(([nr, nc]) => {
+        const ni = idx(nr, nc);
+        if (board[ni] === 1) touchesBlack = true;
+        else if (board[ni] === 2) touchesWhite = true;
+        else if (!visited[ni]) stack.push(ni);
+      });
+    }
+
+    // Assign territory
+    let owner = 0;
+    if (touchesBlack && !touchesWhite) { owner = 1; blackCount += region.length; }
+    else if (touchesWhite && !touchesBlack) { owner = 2; whiteCount += region.length; }
+    region.forEach(i => { territoryMap[i] = owner; });
+  }
+
+  return { black: blackCount, white: whiteCount, map: territoryMap };
+}
+
+function drawWithTerritory(territoryMap) {
+  draw(); // draw base board + stones first
+
+  // Overlay territory markers on empty intersections
+  for (let i = 0; i < SIZE * SIZE; i++) {
+    if (board[i] !== 0 || territoryMap[i] === 0) continue;
+    const r = Math.floor(i / SIZE), c = i % SIZE;
+    const x = px(c), y = py(r);
+    const isBlack = territoryMap[i] === 1;
+
+    ctx.beginPath();
+    ctx.rect(x - 6, y - 6, 12, 12);
+    ctx.fillStyle = isBlack ? 'rgba(20,20,20,0.7)' : 'rgba(240,237,228,0.7)';
+    ctx.fill();
+    ctx.strokeStyle = isBlack ? 'rgba(0,0,0,0.9)' : 'rgba(200,200,200,0.9)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+}
+
+function updateCaptures() {
+  document.getElementById('blackCaptures').textContent = captures[0];
+  document.getElementById('whiteCaptures').textContent = captures[1];
+  // Live score estimate (territory not counted mid-game)
+  document.getElementById('blackTerritory').textContent = '—';
+  document.getElementById('whiteTerritory').textContent = '—';
+  document.getElementById('blackTotal').textContent = '—';
+  document.getElementById('whiteTotal').textContent = '—';
+  document.getElementById('scoreWinner').style.display = 'none';
+}
+
+function getNeighbors(r, c) {
+  const n = [];
+  if (r > 0) n.push([r-1, c]);
+  if (r < SIZE-1) n.push([r+1, c]);
+  if (c > 0) n.push([r, c-1]);
+  if (c < SIZE-1) n.push([r, c+1]);
+  return n;
+}
+
+function getGroup(b, r, c) {
+  const color = b[idx(r, c)];
+  const visited = new Set();
+  const stack = [[r, c]];
+  while (stack.length) {
+    const [cr, cc] = stack.pop();
+    const ci = idx(cr, cc);
+    if (visited.has(ci)) continue;
+    visited.add(ci);
+    getNeighbors(cr, cc).forEach(([nr, nc]) => {
+      const ni = idx(nr, nc);
+      if (!visited.has(ni) && b[ni] === color) stack.push([nr, nc]);
+    });
+  }
+  return [...visited];
+}
+
+function getLiberties(b, group) {
+  const libs = new Set();
+  group.forEach(i => {
+    getNeighbors(row(i), col(i)).forEach(([nr, nc]) => {
+      if (b[idx(nr, nc)] === 0) libs.add(idx(nr, nc));
+    });
+  });
+  return [...libs];
+}
+
+// Simple AI: random legal move, with slight preference for capturing
+function aiMove() {
+  aiThinking = true;
+  const bar = document.getElementById('statusBar');
+  bar.className = 'status-bar thinking';
+  bar.textContent = 'Computer is thinking...';
+
+  setTimeout(() => {
+    aiThinking = false;
+    const opp = 1;
+    const moves = [];
+
+    for (let r = 0; r < SIZE; r++) {
+      for (let c = 0; c < SIZE; c++) {
+        if (board[idx(r, c)] !== 0) continue;
+        const nb = [...board];
+        nb[idx(r, c)] = 2;
+        let captured = 0;
+        getNeighbors(r, c).forEach(([nr, nc]) => {
+          const ni = idx(nr, nc);
+          if (nb[ni] === opp) {
+            const grp = getGroup(nb, nr, nc);
+            if (getLiberties(nb, grp).length === 0) { grp.forEach(gi => { nb[gi] = 0; captured++; }); }
+          }
+        });
+        const myGrp = getGroup(nb, r, c);
+        if (getLiberties(nb, myGrp).length === 0) continue;
+        if (lastBoard && nb.join(',') === lastBoard.join(',')) continue;
+        moves.push({ r, c, captured });
+      }
+    }
+
+    if (moves.length === 0) { passMove(); return; }
+    // Prefer captures, else random
+    moves.sort((a, b) => b.captured - a.captured);
+    const top = moves[0].captured > 0 ? moves.filter(m => m.captured > 0) : moves;
+    const pick = top[Math.floor(Math.random() * Math.min(top.length, 5))];
+    placeStone(pick.r, pick.c);
+  }, 600);
+}
+
+function updateStatus() {
+  if (gameOver) return;
+  const name = currentPlayer === 1 ? 'Black' : (mode === 'ai' ? 'White (Computer)' : 'White');
+  const bar = document.getElementById('statusBar');
+  bar.textContent = `${name}'s turn`;
+  bar.className = `status-bar ${currentPlayer === 1 ? 'black' : 'white'}`;
+}
+
+function renderHistory() {
+  const list = document.getElementById('historyList');
+  list.innerHTML = '';
+  history.slice().reverse().forEach((entry, i) => {
+    const div = document.createElement('div');
+    div.className = 'history-entry';
+    const num = document.createElement('span');
+    num.className = 'h-num';
+    num.textContent = history.length - i;
+    const p = document.createElement('span');
+    p.className = `h-player ${entry.player === 1 ? 'black' : 'white'}`;
+    p.textContent = entry.player === 1 ? '●' : '○';
+    const t = document.createElement('span');
+    t.textContent = entry.text;
+    div.append(num, p, t);
+    list.appendChild(div);
+  });
+}
+
+function undoMove() {
+  if (!undoStack.length) return;
+  const s = undoStack.pop();
+  board = s.board;
+  currentPlayer = s.currentPlayer;
+  captures = s.captures;
+  history = s.history;
+  consecutivePasses = s.consecutivePasses;
+  lastBoard = s.lastBoard;
+  gameOver = false;
+  aiThinking = false;
+  document.getElementById('passBtn').disabled = false;
+  updateCaptures();
+  draw();
+  renderHistory();
+  updateStatus();
+  document.getElementById('undoBtn').disabled = undoStack.length === 0;
+}
+
+function setMode(m) {
+  mode = m;
+  document.getElementById('btn2p').classList.toggle('active', m === '2p');
+  document.getElementById('btnAI').classList.toggle('active', m === 'ai');
+  resetGame();
+}
+
+function openRules() { document.getElementById('rulesModal').classList.add('open'); }
+function closeRules() { document.getElementById('rulesModal').classList.remove('open'); }
+document.getElementById('rulesModal').addEventListener('click', e => {
+  if (e.target === document.getElementById('rulesModal')) closeRules();
+});
+
+function resetGame() { init(); }
+
+init();
+</script>
+</body>
+</html>
